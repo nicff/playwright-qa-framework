@@ -182,24 +182,24 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             case "${{ github.event.inputs.browsers }}" in
               "chromium-only")
-                browsers='["chromium"]'
+                browsers='["chrome"]'
                 ;;
               "chromium-firefox") 
-                browsers='["chromium", "firefox"]'
+                browsers='["chrome", "firefox"]'
                 ;;
               "all-browsers")
-                browsers='["chromium", "firefox", "webkit"]'
+                browsers='["chrome", "firefox", "safari"]'
                 ;;
               *)
-                browsers='["chromium", "firefox"]'
+                browsers='["chrome", "firefox"]'
                 ;;
             esac
           elif [[ "${{ steps.determine-suite.outputs.suite }}" == "regression" ]]; then
             # Regression tests: run on multiple browsers
-            browsers='["chromium", "firefox", "webkit"]'
+            browsers='["chrome", "firefox", "safari"]'
           else
-            # Default: Chromium + Firefox for balanced coverage and speed
-            browsers='["chromium", "firefox"]'
+            # Default: Chrome + Firefox for balanced coverage and speed
+            browsers='["chrome", "firefox"]'
           fi
           
           echo "Browser matrix: $browsers"
@@ -390,8 +390,8 @@ jobs:
 
       - name: 🌐 Install minimal Playwright setup
         run: |
-          # API tests only need chromium for request context
-          npx playwright install --with-deps chromium
+          # API tests only need chrome for request context
+          npx playwright install --with-deps chrome
 
       - name: 🔌 Execute API tests
         run: |
