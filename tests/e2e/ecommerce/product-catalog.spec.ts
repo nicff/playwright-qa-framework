@@ -140,7 +140,7 @@ test.describe('ecommerce - Product Catalog', () => {
       Logger.phase(2, 'Test Price Sorting - Low to High');
       const sortSelect = page.locator('select[name="sort"], .sort-select, #sort');
       if (await sortSelect.isVisible()) {
-        await sortSelect.selectOption({ label: /price.*low/i });
+        await sortSelect.selectOption({ label: 'Price: Low to High' });
         await page.waitForTimeout(2000);
         
         // Verify products are sorted by price
@@ -150,7 +150,7 @@ test.describe('ecommerce - Product Catalog', () => {
       
       Logger.phase(3, 'Test Price Sorting - High to Low');
       if (await sortSelect.isVisible()) {
-        await sortSelect.selectOption({ label: /price.*high/i });
+        await sortSelect.selectOption({ label: 'Price: High to Low' });
         await page.waitForTimeout(2000);
         
         const _prices = await page.locator(SELECTORS.ECOMMERCE.PRICE_ELEMENT).allTextContents();
@@ -162,7 +162,7 @@ test.describe('ecommerce - Product Catalog', () => {
         // Try to sort by name/title
         const nameOption = sortSelect.locator('option').filter({ hasText: /name|title|alphabetic/i });
         if (await nameOption.count() > 0) {
-          await sortSelect.selectOption({ label: /name|title|alphabetic/i });
+          await sortSelect.selectOption({ label: 'Name' });
           await page.waitForTimeout(2000);
           Logger.success('Name sorting applied');
         }

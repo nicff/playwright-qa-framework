@@ -52,7 +52,7 @@ test.describe('aPI Tests - Posts Management', () => {
       expect(userPosts.length).toBeGreaterThan(0);
       
       // Verify all posts belong to the specified user
-      userPosts.forEach(post => {
+      userPosts.forEach((post: { userId: number; id: number; title: string; body: string }) => {
         expect(post.userId).toBe(userId);
       });
       
@@ -230,7 +230,7 @@ test.describe('aPI Tests - Posts Management', () => {
       // First, get all posts to find a valid title to search for
       Logger.phase(1, 'Get all posts to find searchable title');
       const allPostsResponse = await request.get(`${apiTestData.endpoints.jsonplaceholder.baseUrl}/posts`);
-      const allPosts = await allPostsResponse.json();
+      const allPosts: Array<{ userId: number; id: number; title: string; body: string }> = await allPostsResponse.json();
       
       if (allPosts.length > 0) {
         const searchTerm = allPosts[0].title.split(' ')[0]; // Use first word of first post title
@@ -238,7 +238,7 @@ test.describe('aPI Tests - Posts Management', () => {
         Logger.phase(2, `Search posts containing: "${searchTerm}"`);
         
         // Filter posts that contain the search term (simulating search functionality)
-        const matchingPosts = allPosts.filter(post => 
+        const matchingPosts = allPosts.filter((post: { userId: number; id: number; title: string; body: string }) => 
           post.title.toLowerCase().includes(searchTerm.toLowerCase())
         );
         
@@ -246,7 +246,7 @@ test.describe('aPI Tests - Posts Management', () => {
         Logger.success(`Found ${matchingPosts.length} posts containing "${searchTerm}"`);
         
         // Verify search results contain the search term
-        matchingPosts.forEach(post => {
+        matchingPosts.forEach((post: { userId: number; id: number; title: string; body: string }) => {
           expect(post.title.toLowerCase()).toContain(searchTerm.toLowerCase());
         });
       }

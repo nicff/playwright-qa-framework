@@ -322,13 +322,15 @@ export async function makeAuthenticatedRequest(
 ): Promise<unknown> {
   const url = Config.getApiUrl(endpoint);
   
+  const headers = {
+    'Authorization': `Bearer ${Config.API_CONFIG.token}`,
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {})
+  };
+  
   const response = await request.get(url, {
-    headers: {
-      'Authorization': `Bearer ${Config.API_CONFIG.token}`,
-      'Content-Type': 'application/json',
-      ...options.headers
-    },
-    ...options
+    ...options,
+    headers
   });
   
   expect(response.ok()).toBeTruthy();
