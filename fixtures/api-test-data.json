@@ -1,0 +1,239 @@
+{
+  "description": "API test data for generic endpoints - All data is synthetic for testing purposes",
+  "endpoints": {
+    "jsonplaceholder": {
+      "baseUrl": "https://jsonplaceholder.typicode.com",
+      "description": "Free fake API for testing and prototyping",
+      "endpoints": {
+        "posts": "/posts",
+        "comments": "/comments", 
+        "users": "/users",
+        "albums": "/albums",
+        "photos": "/photos"
+      }
+    },
+    "reqres": {
+      "baseUrl": "https://reqres.in/api",
+      "description": "Test your front-end with a real API",
+      "endpoints": {
+        "users": "/users",
+        "register": "/register",
+        "login": "/login"
+      }
+    },
+    "httpbin": {
+      "baseUrl": "https://httpbin.org",
+      "description": "HTTP Request & Response Service",
+      "endpoints": {
+        "get": "/get",
+        "post": "/post", 
+        "put": "/put",
+        "delete": "/delete",
+        "status": "/status"
+      }
+    }
+  },
+  "test_requests": {
+    "user_creation": {
+      "endpoint": "/users",
+      "method": "POST",
+      "body": {
+        "name": "Test User",
+        "email": "testuser@example.com",
+        "username": "testuser123",
+        "address": {
+          "street": "123 Test Street",
+          "suite": "Apt 1",
+          "city": "Test City",
+          "zipcode": "12345"
+        },
+        "phone": "1-555-TEST-001",
+        "website": "test-user.example.com",
+        "company": {
+          "name": "Test Company",
+          "catchPhrase": "Testing made simple",
+          "bs": "quality assurance solutions"
+        }
+      },
+      "expected_status": 201
+    },
+    "user_login": {
+      "endpoint": "/login",
+      "method": "POST", 
+      "body": {
+        "email": "eve.holt@reqres.in",
+        "password": "cityslicka"
+      },
+      "expected_status": 200,
+      "expected_response": {
+        "token": "string"
+      }
+    },
+    "user_registration": {
+      "endpoint": "/register",
+      "method": "POST",
+      "body": {
+        "email": "eve.holt@reqres.in", 
+        "password": "pistol"
+      },
+      "expected_status": 200,
+      "expected_response": {
+        "id": "number",
+        "token": "string"
+      }
+    },
+    "post_creation": {
+      "endpoint": "/posts",
+      "method": "POST",
+      "body": {
+        "title": "Test Post Title",
+        "body": "This is a test post body for API testing purposes. It contains sample content to validate post creation functionality.",
+        "userId": 1
+      },
+      "expected_status": 201,
+      "expected_response": {
+        "id": "number",
+        "title": "string",
+        "body": "string", 
+        "userId": "number"
+      }
+    },
+    "comment_creation": {
+      "endpoint": "/comments",
+      "method": "POST",
+      "body": {
+        "postId": 1,
+        "name": "Test Comment",
+        "email": "test.commenter@example.com",
+        "body": "This is a test comment for API validation purposes."
+      },
+      "expected_status": 201
+    }
+  },
+  "negative_test_cases": {
+    "invalid_user_data": {
+      "endpoint": "/users",
+      "method": "POST",
+      "body": {
+        "name": "",
+        "email": "invalid-email-format",
+        "username": ""
+      },
+      "expected_status": 400
+    },
+    "unauthorized_request": {
+      "endpoint": "/protected-resource",
+      "method": "GET",
+      "headers": {},
+      "expected_status": 401
+    },
+    "resource_not_found": {
+      "endpoint": "/users/99999",
+      "method": "GET",
+      "expected_status": 404
+    },
+    "method_not_allowed": {
+      "endpoint": "/users",
+      "method": "PATCH",
+      "expected_status": 405
+    }
+  },
+  "performance_test_data": {
+    "load_test_endpoints": [
+      {
+        "endpoint": "/users",
+        "method": "GET",
+        "expected_response_time_ms": 1000,
+        "concurrent_users": 10
+      },
+      {
+        "endpoint": "/posts", 
+        "method": "GET",
+        "expected_response_time_ms": 1500,
+        "concurrent_users": 5
+      }
+    ],
+    "stress_test_scenarios": [
+      {
+        "name": "High Volume User Requests",
+        "endpoint": "/users",
+        "method": "GET",
+        "requests_per_second": 100,
+        "duration_seconds": 60
+      }
+    ]
+  },
+  "mock_responses": {
+    "successful_user_response": {
+      "id": 1,
+      "name": "Mock User",
+      "username": "mockuser",
+      "email": "mock@example.com",
+      "address": {
+        "street": "Mock Street",
+        "suite": "Suite 1",
+        "city": "Mock City",
+        "zipcode": "12345",
+        "geo": {
+          "lat": "0.0000",
+          "lng": "0.0000"
+        }
+      },
+      "phone": "1-555-MOCK-001",
+      "website": "mock.example.com",
+      "company": {
+        "name": "Mock Company",
+        "catchPhrase": "Mocking made easy",
+        "bs": "synthetic test data solutions"
+      }
+    },
+    "error_responses": {
+      "validation_error": {
+        "status": 400,
+        "error": "Bad Request",
+        "message": "Validation failed",
+        "details": [
+          {
+            "field": "email",
+            "message": "Invalid email format"
+          },
+          {
+            "field": "name",
+            "message": "Name is required"
+          }
+        ]
+      },
+      "authentication_error": {
+        "status": 401,
+        "error": "Unauthorized",
+        "message": "Authentication required"
+      },
+      "not_found_error": {
+        "status": 404,
+        "error": "Not Found",
+        "message": "Resource not found"
+      },
+      "server_error": {
+        "status": 500,
+        "error": "Internal Server Error",
+        "message": "An unexpected error occurred"
+      }
+    }
+  },
+  "test_configurations": {
+    "timeouts": {
+      "connection_timeout_ms": 5000,
+      "request_timeout_ms": 30000,
+      "response_timeout_ms": 30000
+    },
+    "retry_settings": {
+      "max_retries": 3,
+      "retry_delay_ms": 1000,
+      "backoff_multiplier": 2
+    },
+    "rate_limiting": {
+      "requests_per_minute": 60,
+      "burst_limit": 10
+    }
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "description": "Synthetic product data for ecommerce testing - All products and data are fictional",
+  "products": {
+    "electronics": [
+      {
+        "id": 1001,
+        "title": "Demo Smartphone X1", 
+        "description": "Latest demo smartphone with advanced features for testing purposes",
+        "price": 299.99,
+        "salePrice": 249.99,
+        "category": "Electronics",
+        "subcategory": "Smartphones",
+        "brand": "DemoTech",
+        "sku": "DEMO-PHONE-X1",
+        "inStock": true,
+        "stockQuantity": 50,
+        "image": "https://via.placeholder.com/400x400/007bff/ffffff?text=Demo+Phone",
+        "rating": 4.5,
+        "reviews": 128,
+        "features": [
+          "6.1-inch HD display",
+          "Dual camera system", 
+          "All-day battery life",
+          "Water resistant"
+        ]
+      },
+      {
+        "id": 1002,
+        "title": "Test Laptop Pro",
+        "description": "High-performance laptop for development and testing workflows",
+        "price": 899.99,
+        "salePrice": null,
+        "category": "Electronics",
+        "subcategory": "Laptops",
+        "brand": "QATech",
+        "sku": "QA-LAPTOP-PRO",
+        "inStock": true,
+        "stockQuantity": 25,
+        "image": "https://via.placeholder.com/400x400/28a745/ffffff?text=Test+Laptop",
+        "rating": 4.8,
+        "reviews": 89,
+        "features": [
+          "Intel i7 processor",
+          "16GB RAM",
+          "512GB SSD",
+          "15.6-inch 4K display"
+        ]
+      },
+      {
+        "id": 1003,
+        "title": "Automation Headphones",
+        "description": "Noise-canceling headphones perfect for focused test execution",
+        "price": 149.99,
+        "salePrice": 119.99,
+        "category": "Electronics", 
+        "subcategory": "Audio",
+        "brand": "TestSound",
+        "sku": "TEST-HEADPHONES-NC",
+        "inStock": true,
+        "stockQuantity": 75,
+        "image": "https://via.placeholder.com/400x400/6c757d/ffffff?text=Test+Headphones",
+        "rating": 4.3,
+        "reviews": 203,
+        "features": [
+          "Active noise cancellation",
+          "30-hour battery life",
+          "Wireless Bluetooth",
+          "Comfortable fit"
+        ]
+      }
+    ],
+    "books": [
+      {
+        "id": 2001,
+        "title": "Software Testing Fundamentals",
+        "description": "Comprehensive guide to software testing methodologies and best practices",
+        "price": 39.99,
+        "salePrice": null,
+        "category": "Books",
+        "subcategory": "Technology",
+        "brand": "QA Publications",
+        "sku": "BOOK-TEST-FUND",
+        "inStock": true,
+        "stockQuantity": 100,
+        "image": "https://via.placeholder.com/300x400/17a2b8/ffffff?text=Testing+Book",
+        "rating": 4.7,
+        "reviews": 342,
+        "author": "Jane QA Engineer",
+        "pages": 450,
+        "isbn": "978-0-123456-78-9"
+      },
+      {
+        "id": 2002,
+        "title": "Automation Testing with Playwright",
+        "description": "Modern approaches to web automation testing using Playwright framework",
+        "price": 49.99,
+        "salePrice": 42.99,
+        "category": "Books",
+        "subcategory": "Technology", 
+        "brand": "Tech Learning Press",
+        "sku": "BOOK-PLAYWRIGHT",
+        "inStock": true,
+        "stockQuantity": 80,
+        "image": "https://via.placeholder.com/300x400/ffc107/000000?text=Playwright+Guide",
+        "rating": 4.9,
+        "reviews": 156,
+        "author": "John Automation",
+        "pages": 380,
+        "isbn": "978-0-987654-32-1"
+      }
+    ],
+    "clothing": [
+      {
+        "id": 3001,
+        "title": "QA Engineer T-Shirt",
+        "description": "Comfortable cotton t-shirt for the dedicated quality assurance professional",
+        "price": 24.99,
+        "salePrice": 19.99,
+        "category": "Clothing",
+        "subcategory": "Shirts",
+        "brand": "DevWear",
+        "sku": "TSHIRT-QA-COTTON",
+        "inStock": true,
+        "stockQuantity": 200,
+        "image": "https://via.placeholder.com/400x500/dc3545/ffffff?text=QA+Shirt",
+        "rating": 4.4,
+        "reviews": 89,
+        "sizes": ["S", "M", "L", "XL", "XXL"],
+        "colors": ["Black", "White", "Navy", "Gray"],
+        "material": "100% Cotton"
+      },
+      {
+        "id": 3002,
+        "title": "Testing Hoodie Premium",
+        "description": "Warm and stylish hoodie with 'Debugging in Progress' design",
+        "price": 54.99,
+        "salePrice": null,
+        "category": "Clothing",
+        "subcategory": "Hoodies",
+        "brand": "CodeComfort",
+        "sku": "HOODIE-DEBUG",
+        "inStock": true,
+        "stockQuantity": 60,
+        "image": "https://via.placeholder.com/400x500/6f42c1/ffffff?text=Debug+Hoodie",
+        "rating": 4.6,
+        "reviews": 124,
+        "sizes": ["S", "M", "L", "XL"],
+        "colors": ["Black", "Gray", "Navy"],
+        "material": "Cotton-Polyester Blend"
+      }
+    ]
+  },
+  "categories": [
+    {
+      "id": "electronics",
+      "name": "Electronics",
+      "description": "Gadgets and electronic devices for modern testing needs"
+    },
+    {
+      "id": "books", 
+      "name": "Books",
+      "description": "Educational resources for professional development"
+    },
+    {
+      "id": "clothing",
+      "name": "Clothing",
+      "description": "Apparel for the tech-savvy professional"
+    },
+    {
+      "id": "accessories",
+      "name": "Accessories",
+      "description": "Complementary items and gadgets"
+    }
+  ],
+  "discounts": [
+    {
+      "code": "TEST10",
+      "description": "10% off for testing purposes",
+      "discountPercent": 10,
+      "minimumAmount": 0,
+      "active": true
+    },
+    {
+      "code": "QA20",
+      "description": "20% off for QA professionals",
+      "discountPercent": 20,
+      "minimumAmount": 50,
+      "active": true
+    },
+    {
+      "code": "AUTOMATION25",
+      "description": "25% off automation tools and books",
+      "discountPercent": 25,
+      "minimumAmount": 100,
+      "active": true,
+      "applicableCategories": ["books", "electronics"]
+    }
+  ],
+  "shipping_options": [
+    {
+      "id": "standard",
+      "name": "Standard Shipping",
+      "description": "5-7 business days",
+      "price": 5.99,
+      "estimatedDays": 7
+    },
+    {
+      "id": "express",
+      "name": "Express Shipping", 
+      "description": "2-3 business days",
+      "price": 12.99,
+      "estimatedDays": 3
+    },
+    {
+      "id": "overnight",
+      "name": "Overnight Shipping",
+      "description": "Next business day",
+      "price": 24.99,
+      "estimatedDays": 1
+    }
+  ],
+  "out_of_stock_products": [
+    {
+      "id": 9001,
+      "title": "Sold Out Demo Item",
+      "description": "This item is intentionally out of stock for testing purposes",
+      "price": 99.99,
+      "category": "Electronics",
+      "inStock": false,
+      "stockQuantity": 0,
+      "image": "https://via.placeholder.com/400x400/6c757d/ffffff?text=Out+of+Stock"
+    }
+  ]
+}

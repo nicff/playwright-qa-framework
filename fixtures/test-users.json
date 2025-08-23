@@ -1,0 +1,140 @@
+{
+  "description": "Synthetic test user data for QE automation framework - DO NOT USE REAL USER DATA",
+  "users": {
+    "standard_user": {
+      "username": "standarduser",
+      "email": "standard.user@example.com",
+      "password": "StandardPass123!",
+      "firstName": "Standard",
+      "lastName": "User",
+      "role": "user",
+      "address": {
+        "street": "123 Demo Street",
+        "city": "Test City",
+        "state": "QA State", 
+        "zipCode": "12345",
+        "country": "United States"
+      },
+      "phone": "+1-555-TEST-001"
+    },
+    "admin_user": {
+      "username": "adminuser",
+      "email": "admin.user@example.com",
+      "password": "AdminPass123!",
+      "firstName": "Admin",
+      "lastName": "User",
+      "role": "admin",
+      "address": {
+        "street": "456 Admin Avenue",
+        "city": "Management City",
+        "state": "Admin State",
+        "zipCode": "54321",
+        "country": "United States"
+      },
+      "phone": "+1-555-ADMIN-002"
+    },
+    "premium_user": {
+      "username": "premiumuser",
+      "email": "premium.user@example.com", 
+      "password": "PremiumPass123!",
+      "firstName": "Premium",
+      "lastName": "Member",
+      "role": "premium",
+      "subscriptionType": "premium",
+      "address": {
+        "street": "789 Premium Plaza",
+        "city": "Elite Town",
+        "state": "Premium State",
+        "zipCode": "98765",
+        "country": "United States"
+      },
+      "phone": "+1-555-PREM-003"
+    },
+    "guest_user": {
+      "username": "guestuser",
+      "email": "guest.user@example.com",
+      "password": "GuestPass123!",
+      "firstName": "Guest",
+      "lastName": "Visitor",
+      "role": "guest",
+      "address": {
+        "street": "321 Visitor Way",
+        "city": "Guest City",
+        "state": "Visitor State",
+        "zipCode": "11111",
+        "country": "United States"
+      },
+      "phone": "+1-555-GUEST-004"
+    },
+    "test_automation_users": [
+      {
+        "username": "autouser001",
+        "email": "automation.user.001@example.com",
+        "password": "AutoPass001!",
+        "firstName": "Auto",
+        "lastName": "User001",
+        "role": "user"
+      },
+      {
+        "username": "autouser002", 
+        "email": "automation.user.002@example.com",
+        "password": "AutoPass002!",
+        "firstName": "Auto",
+        "lastName": "User002",
+        "role": "user"
+      },
+      {
+        "username": "autouser003",
+        "email": "automation.user.003@example.com",
+        "password": "AutoPass003!",
+        "firstName": "Auto", 
+        "lastName": "User003",
+        "role": "user"
+      }
+    ]
+  },
+  "invalid_users": {
+    "invalid_email_formats": [
+      {
+        "username": "invaliduser1",
+        "email": "invalid-email-format",
+        "password": "ValidPass123!",
+        "expectedError": "Please enter a valid email address"
+      },
+      {
+        "username": "invaliduser2",
+        "email": "@example.com",
+        "password": "ValidPass123!",
+        "expectedError": "Please enter a valid email address"
+      }
+    ],
+    "weak_passwords": [
+      {
+        "username": "weakpassuser1",
+        "email": "weak.pass.1@example.com",
+        "password": "123",
+        "expectedError": "Password must be at least 8 characters"
+      },
+      {
+        "username": "weakpassuser2",
+        "email": "weak.pass.2@example.com", 
+        "password": "password",
+        "expectedError": "Password must contain at least one number and one special character"
+      }
+    ]
+  },
+  "demo_credentials": {
+    "stripe_test_cards": {
+      "visa_success": "4242424242424242",
+      "visa_decline": "4000000000000002",
+      "mastercard_success": "5555555555554444",
+      "amex_success": "378282246310005",
+      "cvv": "123",
+      "expiry": "12/25"
+    },
+    "paypal_sandbox": {
+      "email": "test.buyer@example.com",
+      "password": "TestBuyerPass123"
+    }
+  }
+}

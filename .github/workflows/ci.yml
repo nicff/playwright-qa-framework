@@ -1,0 +1,905 @@
+# =============================================================================
+# QE AUTOMATION FRAMEWORK CI/CD PIPELINE
+# =============================================================================
+#
+# ⚠️  IMPORTANT: This is a DEMO automation framework workflow
+# 
+# All secrets, tokens, and credentials shown here are examples only.
+# In a real-world scenario, configure actual secrets in GitHub Settings:
+# - Repository Settings > Secrets and variables > Actions > Repository secrets
+#
+# Required secrets (examples for demo purposes):
+# - API_TEST_TOKEN: Demo API authentication token  
+# - SLACK_WEBHOOK_URL: Optional notification webhook (if using Slack)
+# - PERFORMANCE_API_KEY: Optional performance monitoring API key
+#
+# =============================================================================
+
+name: 🎯 QE Automation Framework CI/CD
+
+# =============================================================================
+# WORKFLOW TRIGGERS
+# =============================================================================
+on:
+  # Trigger on pushes to main and develop branches
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.vscode/**'
+      
+  # Trigger on pull requests to main
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.vscode/**'
+      
+  # Daily regression testing at 6 AM UTC
+  schedule:
+    - cron: '0 6 * * *'
+    
+  # Manual workflow dispatch with configurable options
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to execute'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - smoke
+          - regression
+          - api
+          - e2e
+          - critical
+      environment:
+        description: 'Target environment for testing'
+        required: false
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      browsers:
+        description: 'Browser configuration'
+        required: false
+        default: 'chromium-firefox'
+        type: choice
+        options:
+          - chromium-only
+          - chromium-firefox
+          - all-browsers
+
+# =============================================================================
+# GLOBAL ENVIRONMENT VARIABLES
+# =============================================================================
+env:
+  # Centralized configuration - modify these values as needed
+  NODE_VERSION: '18'
+  PLAYWRIGHT_VERSION: '^1.54.2'
+  
+  # Default demo URLs - override via secrets in real scenarios
+  STAGING_BASE_URL: 'https://staging.demo-app.example.com'
+  STAGING_API_URL: 'https://api-staging.demo-app.example.com/v1'
+  PROD_BASE_URL: 'https://demo-app.example.com'
+  PROD_API_URL: 'https://api.demo-app.example.com/v1'
+  
+  # CI/CD specific settings
+  CI: true
+  FORCE_COLOR: 1
+  NODE_OPTIONS: '--max-old-space-size=4096'
+
+# =============================================================================
+# WORKFLOW JOBS
+# =============================================================================
+jobs:
+
+  # ===========================================================================
+  # SETUP & CONFIGURATION JOB
+  # Purpose: Determine test execution strategy based on trigger and inputs
+  # ===========================================================================
+  setup-and-config:
+    name: 🔧 Setup & Configuration
+    runs-on: ubuntu-latest
+    
+    # Job outputs for downstream jobs
+    outputs:
+      test-suite: ${{ steps.determine-suite.outputs.suite }}
+      environment: ${{ steps.determine-env.outputs.env }}
+      browser-matrix: ${{ steps.browser-config.outputs.browsers }}
+      should-run-security: ${{ steps.security-check.outputs.run-security }}
+      base-url: ${{ steps.env-urls.outputs.base-url }}
+      api-url: ${{ steps.env-urls.outputs.api-url }}
+      
+    steps:
+      - name: 📋 Determine test suite strategy
+        id: determine-suite
+        run: |
+          # Logic for determining which test suite to run based on trigger type
+          case "${{ github.event_name }}" in
+            "workflow_dispatch")
+              suite="${{ github.event.inputs.test_suite }}"
+              ;;
+            "schedule")
+              # Daily scheduled runs execute full regression suite
+              suite="regression"
+              ;;
+            "push")
+              if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+                # Main branch: run smoke + critical tests for fast feedback
+                suite="smoke"
+              else
+                # Feature branches: run all tests
+                suite="all"
+              fi
+              ;;
+            "pull_request")
+              # PR: run smoke + critical tests for fast feedback
+              suite="smoke"
+              ;;
+            *)
+              suite="all"
+              ;;
+          esac
+          
+          echo "Selected test suite: $suite"
+          echo "suite=$suite" >> $GITHUB_OUTPUT
+
+      - name: 🌍 Determine target environment
+        id: determine-env
+        run: |
+          # Environment selection logic
+          case "${{ github.event_name }}" in
+            "workflow_dispatch")
+              env="${{ github.event.inputs.environment }}"
+              ;;
+            "schedule")
+              # Daily regression testing against production
+              env="production"
+              ;;
+            "push")
+              if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+                env="production"
+              else
+                env="staging"
+              fi
+              ;;
+            *)
+              env="staging"
+              ;;
+          esac
+          
+          echo "Selected environment: $env"
+          echo "env=$env" >> $GITHUB_OUTPUT
+
+      - name: 🌐 Browser matrix configuration
+        id: browser-config
+        run: |
+          # Configure browser matrix based on test suite and manual input
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            case "${{ github.event.inputs.browsers }}" in
+              "chromium-only")
+                browsers='["chromium"]'
+                ;;
+              "chromium-firefox") 
+                browsers='["chromium", "firefox"]'
+                ;;
+              "all-browsers")
+                browsers='["chromium", "firefox", "webkit"]'
+                ;;
+              *)
+                browsers='["chromium", "firefox"]'
+                ;;
+            esac
+          elif [[ "${{ steps.determine-suite.outputs.suite }}" == "regression" ]]; then
+            # Regression tests: run on multiple browsers
+            browsers='["chromium", "firefox", "webkit"]'
+          else
+            # Default: Chromium + Firefox for balanced coverage and speed
+            browsers='["chromium", "firefox"]'
+          fi
+          
+          echo "Browser matrix: $browsers"
+          echo "browsers=$browsers" >> $GITHUB_OUTPUT
+
+      - name: 🔒 Security scan configuration
+        id: security-check
+        run: |
+          # Security scans: only on main branch or scheduled runs
+          if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.event_name }}" == "schedule" ]]; then
+            echo "run-security=true" >> $GITHUB_OUTPUT
+            echo "Security scan will be executed"
+          else
+            echo "run-security=false" >> $GITHUB_OUTPUT
+            echo "Security scan skipped for this trigger"
+          fi
+
+      - name: 🔗 Environment URLs configuration  
+        id: env-urls
+        run: |
+          # Set URLs based on target environment
+          if [[ "${{ steps.determine-env.outputs.env }}" == "production" ]]; then
+            echo "base-url=${{ env.PROD_BASE_URL }}" >> $GITHUB_OUTPUT
+            echo "api-url=${{ env.PROD_API_URL }}" >> $GITHUB_OUTPUT
+          else
+            echo "base-url=${{ env.STAGING_BASE_URL }}" >> $GITHUB_OUTPUT
+            echo "api-url=${{ env.STAGING_API_URL }}" >> $GITHUB_OUTPUT
+          fi
+
+  # ===========================================================================
+  # CODE QUALITY & LINTING JOB
+  # Purpose: Ensure code quality standards before running tests
+  # Failure Strategy: FAIL FAST - block all downstream jobs if quality checks fail
+  # ===========================================================================
+  code-quality:
+    name: 📝 Code Quality & Type Safety
+    runs-on: ubuntu-latest
+    continue-on-error: false  # Fail fast - stop pipeline if quality issues found
+    
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for better ESLint analysis
+          fetch-depth: 0
+
+      - name: ⚙️ Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: 📥 Install dependencies
+        run: |
+          # Clean install to ensure reproducible builds
+          npm ci --prefer-offline --no-audit
+          
+      - name: 🧹 Clean previous artifacts
+        run: |
+          # Remove any existing lint/type-check artifacts
+          rm -rf reports/lint reports/typecheck
+          mkdir -p reports/lint reports/typecheck
+
+      - name: 🔍 Run ESLint analysis
+        run: |
+          echo "Running ESLint with detailed reporting..."
+          npm run lint -- --format=json --output-file=reports/lint/eslint-results.json || npm run lint
+          
+      - name: 🔎 Run TypeScript type checking
+        run: |
+          echo "Running TypeScript type checking..."
+          npm run type-check
+          
+      - name: 📊 Upload code quality artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-quality-results
+          path: reports/lint/
+          retention-days: 7
+          if-no-files-found: warn
+
+  # ===========================================================================
+  # SMOKE TESTS JOB
+  # Purpose: Fast validation tests for critical functionality
+  # Strategy: Multi-browser parallel execution for quick feedback
+  # ===========================================================================
+  smoke-tests:
+    name: 💨 Smoke Tests
+    needs: [setup-and-config, code-quality]
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    
+    # Conditional execution based on test suite selection
+    if: |
+      needs.setup-and-config.outputs.test-suite == 'all' || 
+      needs.setup-and-config.outputs.test-suite == 'smoke' ||
+      needs.setup-and-config.outputs.test-suite == 'critical'
+    
+    strategy:
+      # Dynamic browser matrix from setup job
+      matrix:
+        browser: ${{ fromJson(needs.setup-and-config.outputs.browser-matrix) }}
+      fail-fast: false  # Continue other browsers even if one fails
+      max-parallel: 3   # Limit concurrent jobs to avoid resource contention
+
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: 🧹 Clean test artifacts
+        run: |
+          rm -rf test-results reports playwright-report
+          mkdir -p test-results reports
+
+      - name: 🌐 Install Playwright browser
+        run: |
+          # Install only the required browser for efficiency
+          npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: 🧪 Execute smoke tests
+        run: |
+          echo "🚀 Running smoke tests on ${{ matrix.browser }}..."
+          npm run test:smoke -- --project=${{ matrix.browser }} --reporter=github,html,json,junit
+        env:
+          BASE_URL: ${{ needs.setup-and-config.outputs.base-url }}
+          API_BASE_URL: ${{ needs.setup-and-config.outputs.api-url }}
+          # Demo secret - in real scenarios, use GitHub Secrets
+          API_TEST_TOKEN: ${{ secrets.API_TEST_TOKEN || 'demo_token_12345' }}
+          BROWSER: ${{ matrix.browser }}
+          TEST_ENV: ${{ needs.setup-and-config.outputs.environment }}
+
+      - name: 📊 Upload smoke test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-tests-${{ matrix.browser }}
+          path: |
+            test-results/
+            reports/
+            playwright-report/
+          retention-days: 7
+          compression-level: 6
+
+  # ===========================================================================
+  # API TESTS JOB  
+  # Purpose: Backend API validation and contract testing
+  # Strategy: Single runner (API tests don't need browser matrix)
+  # ===========================================================================
+  api-tests:
+    name: 🔌 API & Integration Tests
+    needs: [setup-and-config, code-quality]
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    
+    if: |
+      needs.setup-and-config.outputs.test-suite == 'all' || 
+      needs.setup-and-config.outputs.test-suite == 'api' ||
+      needs.setup-and-config.outputs.test-suite == 'regression'
+
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js environment  
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: 🧹 Clean API test artifacts
+        run: |
+          rm -rf test-results reports playwright-report
+          mkdir -p test-results reports
+
+      - name: 🌐 Install minimal Playwright setup
+        run: |
+          # API tests only need chromium for request context
+          npx playwright install --with-deps chromium
+
+      - name: 🔌 Execute API tests
+        run: |
+          echo "🚀 Running API integration tests..."
+          npm run test:api -- --reporter=github,html,json,junit
+        env:
+          API_BASE_URL: ${{ needs.setup-and-config.outputs.api-url }}
+          BASE_URL: ${{ needs.setup-and-config.outputs.base-url }}
+          # Demo credentials - use GitHub Secrets in production
+          API_TEST_TOKEN: ${{ secrets.API_TEST_TOKEN || 'demo_api_token_12345' }}
+          API_CLIENT_ID: ${{ secrets.API_CLIENT_ID || 'demo_client_id' }}
+          API_CLIENT_SECRET: ${{ secrets.API_CLIENT_SECRET || 'demo_client_secret' }}
+          TEST_ENV: ${{ needs.setup-and-config.outputs.environment }}
+
+      - name: 📊 Upload API test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-results
+          path: |
+            test-results/
+            reports/
+            playwright-report/
+          retention-days: 14
+          compression-level: 6
+
+  # ===========================================================================
+  # E2E TESTS JOB
+  # Purpose: Full end-to-end user journey validation
+  # Strategy: Sharded execution for scalability and parallel processing
+  # ===========================================================================
+  e2e-tests:
+    name: 🎭 E2E Tests (Shard ${{ matrix.shard }})
+    needs: [setup-and-config, code-quality, smoke-tests]
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    
+    # Only run E2E tests after smoke tests pass (dependency validation)
+    if: |
+      needs.smoke-tests.result == 'success' &&
+      (needs.setup-and-config.outputs.test-suite == 'all' || 
+       needs.setup-and-config.outputs.test-suite == 'e2e' ||
+       needs.setup-and-config.outputs.test-suite == 'regression')
+
+    strategy:
+      matrix:
+        # Sharding strategy: split tests into 4 parallel shards for faster execution
+        # Each shard runs approximately 25% of the E2E test suite
+        shard: ['1/4', '2/4', '3/4', '4/4']
+      fail-fast: false    # Continue other shards even if one fails
+      max-parallel: 4     # Run all shards concurrently
+
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: 🧹 Clean E2E test artifacts
+        run: |
+          rm -rf test-results reports playwright-report
+          mkdir -p test-results reports
+
+      - name: 🌐 Install all Playwright browsers
+        run: |
+          # E2E tests may need multiple browsers
+          npx playwright install --with-deps
+
+      - name: 🎭 Execute E2E tests (Shard ${{ matrix.shard }})
+        run: |
+          echo "🚀 Running E2E tests - Shard ${{ matrix.shard }}..."
+          npm run test:e2e -- --shard=${{ matrix.shard }} --reporter=github,html,json,junit
+        env:
+          BASE_URL: ${{ needs.setup-and-config.outputs.base-url }}
+          API_BASE_URL: ${{ needs.setup-and-config.outputs.api-url }}
+          # Demo test user credentials - use GitHub Secrets in production
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL || 'test.user@example.com' }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD || 'TestPassword123!' }}
+          ADMIN_USER_EMAIL: ${{ secrets.ADMIN_USER_EMAIL || 'admin.user@example.com' }}
+          ADMIN_USER_PASSWORD: ${{ secrets.ADMIN_USER_PASSWORD || 'AdminPassword123!' }}
+          TEST_ENV: ${{ needs.setup-and-config.outputs.environment }}
+          SHARD: ${{ matrix.shard }}
+
+      - name: 📊 Upload E2E test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-tests-shard-${{ matrix.shard }}
+          path: |
+            test-results/
+            reports/
+            playwright-report/
+          retention-days: 14
+          compression-level: 6
+
+  # ===========================================================================
+  # REGRESSION TESTS JOB
+  # Purpose: Comprehensive testing for scheduled runs and release validation
+  # Strategy: Multi-browser + sharded execution for maximum coverage
+  # ===========================================================================
+  regression-tests:
+    name: 🔄 Regression Tests (${{ matrix.browser }} - Shard ${{ matrix.shard }})
+    needs: [setup-and-config, code-quality]
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    
+    # Only run regression tests on schedule or explicit selection
+    if: |
+      needs.setup-and-config.outputs.test-suite == 'regression' || 
+      github.event_name == 'schedule'
+
+    strategy:
+      matrix:
+        # Cross-browser regression testing
+        browser: ${{ fromJson(needs.setup-and-config.outputs.browser-matrix) }}
+        # Shard regression tests for better performance  
+        shard: ['1/3', '2/3', '3/3']
+      fail-fast: false
+      max-parallel: 6  # Increased parallelism for regression runs
+
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: 🧹 Clean regression test artifacts
+        run: |
+          rm -rf test-results reports playwright-report
+          mkdir -p test-results reports
+
+      - name: 🌐 Install Playwright browser
+        run: |
+          npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: 🔄 Execute regression tests
+        run: |
+          echo "🚀 Running regression tests on ${{ matrix.browser }} - Shard ${{ matrix.shard }}..."
+          npm run test:regression -- --project=${{ matrix.browser }} --shard=${{ matrix.shard }} --reporter=github,html,json,junit
+        env:
+          BASE_URL: ${{ needs.setup-and-config.outputs.base-url }}
+          API_BASE_URL: ${{ needs.setup-and-config.outputs.api-url }}
+          API_TEST_TOKEN: ${{ secrets.API_TEST_TOKEN || 'demo_api_token_12345' }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL || 'test.user@example.com' }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD || 'TestPassword123!' }}
+          BROWSER: ${{ matrix.browser }}
+          TEST_ENV: ${{ needs.setup-and-config.outputs.environment }}
+          SHARD: ${{ matrix.shard }}
+
+      - name: 📊 Upload regression test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-tests-${{ matrix.browser }}-${{ matrix.shard }}
+          path: |
+            test-results/
+            reports/
+            playwright-report/
+          retention-days: 30  # Longer retention for regression analysis
+          compression-level: 6
+
+  # ===========================================================================
+  # SECURITY SCANNING JOB
+  # Purpose: Automated security vulnerability detection
+  # Strategy: Non-blocking security checks with private artifact reporting
+  # ===========================================================================
+  security-scan:
+    name: 🔒 Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    continue-on-error: true  # Non-blocking - don't fail pipeline on security findings
+    
+    # Only run security scans when configured by setup job
+    if: needs.setup-and-config.outputs.should-run-security == 'true'
+    needs: [setup-and-config, code-quality]
+
+    steps:
+      - name: 📦 Checkout repository  
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci --prefer-offline
+
+      - name: 🔍 Run NPM security audit
+        id: npm-audit
+        run: |
+          echo "Running NPM security audit..."
+          mkdir -p reports/security
+          
+          # Run audit and capture results (don't fail on findings)
+          npm audit --audit-level=moderate --json > reports/security/npm-audit.json || true
+          
+          # Generate human-readable report  
+          npm audit --audit-level=moderate > reports/security/npm-audit.txt || true
+          
+          echo "Security audit completed - results saved to artifacts"
+
+      - name: 🛡️ Run dependency vulnerability check
+        continue-on-error: true
+        run: |
+          # Install and run dependency-check for additional security scanning
+          echo "Performing dependency vulnerability analysis..."
+          
+          # Using a lightweight security scanner (replace with your preferred tool)
+          npx audit-ci --config ./audit-ci.json > reports/security/audit-ci-results.txt || true
+
+      - name: 📊 Upload security scan results (PRIVATE)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-scan-results-private
+          path: reports/security/
+          retention-days: 90  # Longer retention for security analysis
+          # Note: These artifacts are private to repository collaborators only
+
+      - name: 📋 Security scan summary (NO SENSITIVE DATA)
+        if: always()
+        run: |
+          echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Security vulnerability scan completed" >> $GITHUB_STEP_SUMMARY
+          echo "📊 Detailed results available in workflow artifacts (private)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY  
+          echo "⚠️  **Note**: Detailed security findings are available only to repository collaborators via private artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "🔍 Review the 'security-scan-results-private' artifact for complete analysis." >> $GITHUB_STEP_SUMMARY
+
+  # ===========================================================================
+  # TEST REPORTING & ANALYSIS JOB
+  # Purpose: Aggregate all test results and generate comprehensive reports
+  # Strategy: Merge results from all test jobs and publish unified artifacts
+  # ===========================================================================
+  test-reporting:
+    name: 📊 Test Reporting & Analysis
+    needs: [setup-and-config, smoke-tests, api-tests, e2e-tests, regression-tests]
+    runs-on: ubuntu-latest
+    
+    # Always run reporting if any test job executed (even if failed)
+    if: |
+      always() && 
+      (needs.smoke-tests.result != 'skipped' || 
+       needs.api-tests.result != 'skipped' || 
+       needs.e2e-tests.result != 'skipped' || 
+       needs.regression-tests.result != 'skipped')
+
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📥 Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: 📥 Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts/
+          pattern: '*test*'  # Download only test-related artifacts
+          merge-multiple: false
+
+      - name: 🔄 Merge test results
+        run: |
+          echo "🔄 Merging test results from all test jobs..."
+          mkdir -p merged-reports/{html,json,junit}
+          
+          # Find and merge JSON reports (for detailed analysis)
+          find downloaded-artifacts/ -name "*.json" -type f | while read file; do
+            if [[ -s "$file" ]]; then  # Check if file is not empty
+              cp "$file" "merged-reports/json/$(basename "$(dirname "$file")")-$(basename "$file")"
+            fi
+          done
+          
+          # Find and merge JUnit XML reports (for GitHub integration)
+          find downloaded-artifacts/ -name "*.xml" -type f | while read file; do
+            if [[ -s "$file" ]]; then
+              cp "$file" "merged-reports/junit/$(basename "$(dirname "$file")")-$(basename "$file")"
+            fi
+          done
+          
+          # Copy HTML reports
+          find downloaded-artifacts/ -name "playwright-report" -type d | while read dir; do
+            if [[ -d "$dir" ]]; then
+              cp -r "$dir" "merged-reports/html/$(basename "$(dirname "$dir")")-html-report"
+            fi
+          done
+          
+          echo "✅ Test result merging completed"
+
+      - name: 📈 Generate consolidated HTML report
+        continue-on-error: true  # Don't fail if report generation has issues
+        run: |
+          echo "📈 Generating consolidated test report..."
+          
+          # Check if we have any results to process
+          if ls merged-reports/json/*.json 1> /dev/null 2>&1; then
+            # Generate merged HTML report using Playwright's reporter
+            npx playwright show-report merged-reports/ --host 0.0.0.0 || echo "⚠️ HTML report generation skipped"
+          else
+            echo "⚠️ No JSON results found - skipping consolidated report generation"
+          fi
+
+      - name: 📊 Upload merged test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-test-reports
+          path: |
+            merged-reports/
+            playwright-report/
+          retention-days: 30
+          compression-level: 9
+
+      - name: 🧾 Publish test results to GitHub
+        if: always()
+        uses: dorny/test-reporter@v1.9.1
+        with:
+          name: '📋 QE Automation Test Results'
+          path: 'merged-reports/junit/*.xml'
+          reporter: java-junit
+          fail-on-error: false  # Don't fail workflow on reporting issues
+          only-summary: false
+          max-annotations: 50
+
+      - name: 📋 Generate test summary
+        if: always()
+        run: |
+          echo "## 🎯 QE Automation Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Environment and configuration info
+          echo "### 📋 Execution Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ needs.setup-and-config.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Test Suite**: ${{ needs.setup-and-config.outputs.test-suite }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Base URL**: ${{ needs.setup-and-config.outputs.base-url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Browser Matrix**: ${{ needs.setup-and-config.outputs.browser-matrix }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Test results summary
+          echo "### 🧪 Test Results Overview" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Status | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 💨 Smoke Tests | ${{ needs.smoke-tests.result || '⏭️ Skipped' }} | $([ "${{ needs.smoke-tests.result }}" == "success" ] && echo "✅" || ([ "${{ needs.smoke-tests.result }}" == "failure" ] && echo "❌" || echo "⏭️")) |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔌 API Tests | ${{ needs.api-tests.result || '⏭️ Skipped' }} | $([ "${{ needs.api-tests.result }}" == "success" ] && echo "✅" || ([ "${{ needs.api-tests.result }}" == "failure" ] && echo "❌" || echo "⏭️")) |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎭 E2E Tests | ${{ needs.e2e-tests.result || '⏭️ Skipped' }} | $([ "${{ needs.e2e-tests.result }}" == "success" ] && echo "✅" || ([ "${{ needs.e2e-tests.result }}" == "failure" ] && echo "❌" || echo "⏭️")) |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔄 Regression Tests | ${{ needs.regression-tests.result || '⏭️ Skipped' }} | $([ "${{ needs.regression-tests.result }}" == "success" ] && echo "✅" || ([ "${{ needs.regression-tests.result }}" == "failure" ] && echo "❌" || echo "⏭️")) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Artifacts and reports
+          echo "### 📊 Available Reports & Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- 📋 **Test Results**: Available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- 📈 **HTML Reports**: Individual test suite reports + consolidated report" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 **JUnit Results**: Integrated with GitHub's test reporting" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔒 **Security Scan**: Private artifact (repository collaborators only)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Footer
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*🤖 Generated by QE Automation Framework CI/CD Pipeline*" >> $GITHUB_STEP_SUMMARY
+
+  # ===========================================================================
+  # NOTIFICATION & ALERTING JOB
+  # Purpose: Send notifications for critical test failures (opt-in only)
+  # Strategy: Only notify on main branch failures, never expose sensitive data
+  # ===========================================================================
+  notifications:
+    name: 📢 Test Results Notification
+    needs: [setup-and-config, smoke-tests, api-tests, e2e-tests, regression-tests, test-reporting]
+    runs-on: ubuntu-latest
+    
+    # Only run notifications for main branch and if webhook is configured
+    if: |
+      always() && 
+      github.ref == 'refs/heads/main' &&
+      secrets.SLACK_WEBHOOK_URL != ''
+
+    steps:
+      - name: 📊 Determine overall test status
+        id: overall-status
+        run: |
+          # Calculate overall pipeline status
+          smoke_result="${{ needs.smoke-tests.result || 'skipped' }}"
+          api_result="${{ needs.api-tests.result || 'skipped' }}"
+          e2e_result="${{ needs.e2e-tests.result || 'skipped' }}"
+          regression_result="${{ needs.regression-tests.result || 'skipped' }}"
+          
+          if [[ "$smoke_result" == "failure" || "$api_result" == "failure" || "$e2e_result" == "failure" ]]; then
+            echo "status=critical-failure" >> $GITHUB_OUTPUT
+            echo "🚨 Critical test failures detected"
+          elif [[ "$regression_result" == "failure" ]]; then
+            echo "status=regression-failure" >> $GITHUB_OUTPUT
+            echo "⚠️ Regression test failures detected"
+          elif [[ "$smoke_result" == "success" || "$api_result" == "success" || "$e2e_result" == "success" ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "✅ Tests completed successfully"
+          else
+            echo "status=unknown" >> $GITHUB_OUTPUT
+            echo "❓ Test status unclear"
+          fi
+
+      - name: 📢 Send Slack notification (opt-in only)
+        if: steps.overall-status.outputs.status != 'success'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          custom_payload: |
+            {
+              "channel": "#qa-automation",
+              "username": "QE Automation Bot",
+              "icon_emoji": ":robot_face:",
+              "attachments": [{
+                "color": "${{ steps.overall-status.outputs.status == 'critical-failure' && 'danger' || 'warning' }}",
+                "title": "🎯 QE Automation Pipeline Results",
+                "fields": [
+                  {
+                    "title": "Repository",
+                    "value": "${{ github.repository }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Branch",
+                    "value": "${{ github.ref_name }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Status",
+                    "value": "${{ steps.overall-status.outputs.status }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Environment",
+                    "value": "${{ needs.setup-and-config.outputs.environment }}",
+                    "short": true
+                  }
+                ],
+                "actions": [{
+                  "type": "button",
+                  "text": "View Workflow",
+                  "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                }]
+              }]
+            }
+        env:
+          # Demo webhook - replace with real secret in production
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          
+# =============================================================================
+# WORKFLOW SECURITY & SECRETS CONFIGURATION
+# =============================================================================
+#
+# 🔒 SECURITY CONFIGURATION GUIDE:
+#
+# This workflow demonstrates secure handling of secrets and credentials.
+# For production use, configure the following secrets in GitHub repository settings:
+#
+# Repository Settings > Secrets and variables > Actions > Repository secrets:
+#
+# Required Secrets (Demo Framework):
+# - API_TEST_TOKEN: "your-demo-api-token"
+# - TEST_USER_EMAIL: "your-test-user@example.com"  
+# - TEST_USER_PASSWORD: "your-secure-test-password"
+# - ADMIN_USER_EMAIL: "your-admin-user@example.com"
+# - ADMIN_USER_PASSWORD: "your-secure-admin-password"
+#
+# Optional Secrets (Advanced Features):
+# - SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+# - PERFORMANCE_API_KEY: "your-performance-monitoring-key"
+# - API_CLIENT_ID: "your-oauth-client-id"
+# - API_CLIENT_SECRET: "your-oauth-client-secret"
+#
+# 🛡️ SECURITY BEST PRACTICES:
+# - Never hardcode secrets in workflow files
+# - Use environment-specific secrets for different deployment stages  
+# - Regularly rotate API tokens and passwords
+# - Limit secret access to minimum required permissions
+# - Monitor secret usage through GitHub's audit logs
+# - Use OIDC tokens for cloud provider authentication when possible
+#
+# 📊 ARTIFACT RETENTION POLICY:
+# - Code Quality: 7 days (quick feedback cycle)
+# - Test Results: 14 days (analysis and debugging)
+# - Regression Results: 30 days (trend analysis)
+# - Security Scans: 90 days (compliance and audit)
+# - Consolidated Reports: 30 days (reporting and metrics)
+#
+# =============================================================================

@@ -1,0 +1,106 @@
+{
+  "name": "playwright-sdet-automation-framework",
+  "version": "1.0.0",
+  "description": "Professional SDET/QA automation framework with Playwright, TypeScript, and modern testing practices for web applications",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    
+    "test:chrome": "playwright test --project=chrome",
+    "test:firefox": "playwright test --project=firefox", 
+    "test:safari": "playwright test --project=safari",
+    "test:mobile": "playwright test --project=mobile-chrome --project=mobile-safari",
+    
+    "test:local": "cross-env BASE_URL=http://localhost:3000 playwright test",
+    "test:staging": "cross-env BASE_URL=https://staging.demo-app.example.com playwright test",
+    "test:prod": "cross-env BASE_URL=https://demo-app.example.com playwright test",
+    
+    "test:e2e": "playwright test tests/e2e/",
+    "test:e2e:auth": "playwright test tests/e2e/auth/",
+    "test:e2e:ecommerce": "playwright test tests/e2e/ecommerce/",
+    "test:api": "playwright test tests/api/",
+    
+    "test:smoke": "playwright test --grep=\"@smoke\"",
+    "test:regression": "playwright test --grep=\"@regression\"",
+    "test:critical": "playwright test --grep=\"@critical\"",
+    "test:sanity": "playwright test --grep=\"@sanity\"",
+    
+    "test:parallel": "playwright test --workers=50%",
+    "test:serial": "playwright test --workers=1",
+    "test:fast": "playwright test --reporter=dot",
+    
+    "report": "playwright show-report",
+    "report:open": "playwright show-report --open",
+    "report:json": "playwright test --reporter=json",
+    "report:html": "playwright test --reporter=html",
+    
+    "browsers:install": "playwright install",
+    "browsers:install-deps": "playwright install-deps",
+    "browsers:list": "playwright install --list",
+    
+    "lint": "eslint . --ext .ts,.js",
+    "lint:fix": "eslint . --ext .ts,.js --fix",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
+    
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch",
+    
+    "clean": "rimraf test-results/ playwright-report/ reports/",
+    "clean:all": "rimraf test-results/ playwright-report/ reports/ node_modules/ package-lock.json",
+    "clean:install": "npm run clean && npm ci && npm run browsers:install",
+    
+    "setup": "npm ci && npm run browsers:install && npm run type-check",
+    "pretest": "npm run type-check",
+    
+    "test:ci": "playwright test --reporter=github,html",
+    "test:ci:sharded": "playwright test --shard=$CI_SHARD_INDEX/$CI_SHARD_COUNT",
+    
+    "health-check": "playwright test tests/config/environment-config.spec.ts"
+  },
+  "keywords": [
+    "playwright",
+    "typescript", 
+    "automation",
+    "testing",
+    "e2e",
+    "api-testing",
+    "qa",
+    "sdet",
+    "ci-cd",
+    "test-framework",
+    "cross-browser",
+    "web-testing"
+  ],
+  "author": "Nicolas Cafferata - QA Engineer",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "@types/node": "^22.11.11",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.4.5",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-playwright": "^1.8.2",
+    "prettier": "^3.3.3",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicff/playwright-sdet-automation-framework.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nicff/playwright-sdet-automation-framework/issues"
+  },
+  "homepage": "https://github.com/nicff/playwright-sdet-automation-framework#readme"
+}
