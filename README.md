@@ -2,7 +2,7 @@
 
 > **Professional automation framework showcasing modern SDET/QA practices and skills**
 
-[![CI/CD Pipeline](https://github.com/nicff/playwright-sdet-automation-framework/workflows/🎯%20QE%20Automation%20Framework%20CI%2FCD/badge.svg)](https://github.com/nicff/playwright-sdet-automation-framework/actions)
+[![CI/CD Pipeline](https://github.com/nicff/playwright-qa-framework/actions/workflows/ci.yml/badge.svg?branch=main&event=status)](https://github.com/nicff/playwright-qa-framework/actions)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-2D4A87?style=flat&logo=playwright&logoColor=white)](https://playwright.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
