@@ -54,7 +54,7 @@ test.describe('user Authentication - Login Flow', () => {
       
       Logger.phase(2, 'Login with Username');
       await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       await page.fill(SELECTORS.AUTH.EMAIL_INPUT, testUser.username);
       await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, testUser.password);
@@ -82,7 +82,7 @@ test.describe('user Authentication - Login Flow', () => {
       
       Logger.phase(2, 'Login with Wrong Password');
       await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       await page.fill(SELECTORS.AUTH.EMAIL_INPUT, testUser.email);
       await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, 'WrongPassword123!');
@@ -109,7 +109,7 @@ test.describe('user Authentication - Login Flow', () => {
     try {
       Logger.phase(1, 'Login with Non-existent User');
       await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       const fakeEmail = TestDataGenerator.randomEmail();
       await page.fill(SELECTORS.AUTH.EMAIL_INPUT, fakeEmail);
@@ -134,7 +134,7 @@ test.describe('user Authentication - Login Flow', () => {
     try {
       Logger.phase(1, 'Navigate to Login Form');
       await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       Logger.phase(2, 'Submit Empty Form');
       await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
@@ -169,13 +169,13 @@ test.describe('user Authentication - Login Flow', () => {
       
       Logger.phase(2, 'Login with Remember Me');
       await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       await page.fill(SELECTORS.AUTH.EMAIL_INPUT, testUser.email);
       await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, testUser.password);
       
       // Check remember me if available
-      const rememberMeCheckbox = page.locator('input[type=\"checkbox\"][name*=\"remember\"], #remember-me');
+      const rememberMeCheckbox = page.locator('input[type="checkbox"][name*="remember"], #remember-me');
       if (await rememberMeCheckbox.isVisible()) {
         await rememberMeCheckbox.check();
         Logger.info('Remember me checkbox checked');
@@ -201,11 +201,11 @@ test.describe('user Authentication - Login Flow', () => {
     try {
       Logger.phase(1, 'Navigate to Login Form');
       await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       Logger.phase(2, 'Test Password Visibility Toggle');
       const passwordInput = page.locator(SELECTORS.AUTH.PASSWORD_INPUT);
-      const toggleButton = page.locator('[data-testid=\"password-toggle\"], .password-toggle, button[aria-label*=\"password\"]');
+      const toggleButton = page.locator('[data-testid="password-toggle"], .password-toggle, button[aria-label*="password"]');
       
       // Enter password
       await passwordInput.fill('TestPassword123!');

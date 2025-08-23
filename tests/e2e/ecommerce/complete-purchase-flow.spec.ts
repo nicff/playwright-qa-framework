@@ -1,17 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { 
   createAndRegisterUser,
-  addProductToCart,
-  proceedToCheckout,
   navigateToPage,
   waitForPageLoad,
   TestDataGenerator,
   Logger,
   cleanupTest
 } from '../helpers/test-helpers';
-import { Config } from '../../../utils/config';
 import { SELECTORS, TEST_TAGS } from '../../../utils/constants';
-import testProducts from '../../../fixtures/test-products.json';
 
 test.describe('ecommerce - Complete Purchase Flow', () => {
 
@@ -68,15 +64,15 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       
       Logger.phase(6, 'Shipping Information');
       // Fill shipping information if form exists
-      const shippingForm = page.locator('form[name=\"shipping\"], .shipping-form, #shipping-form');
+      const shippingForm = page.locator('form[name="shipping"], .shipping-form, #shipping-form');
       if (await shippingForm.isVisible()) {
-        await page.fill('input[name=\"firstName\"], #firstName', 'Test');
-        await page.fill('input[name=\"lastName\"], #lastName', 'Customer');
-        await page.fill('input[name=\"address\"], #address', '123 Test Street');
-        await page.fill('input[name=\"city\"], #city', 'Test City');
-        await page.fill('input[name=\"zipCode\"], #zipCode', '12345');
+        await page.fill('input[name="firstName"], #firstName', 'Test');
+        await page.fill('input[name="lastName"], #lastName', 'Customer');
+        await page.fill('input[name="address"], #address', '123 Test Street');
+        await page.fill('input[name="city"], #city', 'Test City');
+        await page.fill('input[name="zipCode"], #zipCode', '12345');
         
-        const continueButton = page.locator('button[type=\"submit\"], .continue-btn, .next-btn');
+        const continueButton = page.locator('button[type="submit"], .continue-btn, .next-btn');
         if (await continueButton.isVisible()) {
           await continueButton.click();
           await waitForPageLoad(page);
@@ -87,15 +83,15 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       
       Logger.phase(7, 'Payment Information');
       // Fill payment form with test data
-      await page.fill('input[name=\"cardNumber\"], #cardNumber', '4111111111111111');
-      await page.fill('input[name=\"expiryDate\"], #expiryDate', '12/25');
-      await page.fill('input[name=\"cvv\"], #cvv', '123');
-      await page.fill('input[name=\"cardholderName\"], #cardholderName', 'Test Customer');
+      await page.fill('input[name="cardNumber"], #cardNumber', '4111111111111111');
+      await page.fill('input[name="expiryDate"], #expiryDate', '12/25');
+      await page.fill('input[name="cvv"], #cvv', '123');
+      await page.fill('input[name="cardholderName"], #cardholderName', 'Test Customer');
       
       Logger.success('Payment information filled');
       
       Logger.phase(8, 'Order Completion');
-      const completeOrderButton = page.locator('button[type=\"submit\"], .complete-order-btn, .place-order-btn');
+      const completeOrderButton = page.locator('button[type="submit"], .complete-order-btn, .place-order-btn');
       await completeOrderButton.click();
       
       Logger.phase(9, 'Order Confirmation Verification');
@@ -141,7 +137,7 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       await waitForPageLoad(page);
       
       // Look for guest checkout option
-      const guestCheckoutButton = page.locator('.guest-checkout, .checkout-as-guest, button:has-text(\"Guest\")');
+      const guestCheckoutButton = page.locator('.guest-checkout, .checkout-as-guest, button:has-text("Guest")');
       if (await guestCheckoutButton.isVisible()) {
         await guestCheckoutButton.click();
         await waitForPageLoad(page);
@@ -150,22 +146,22 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       
       Logger.phase(3, 'Fill Guest Information');
       // Fill guest information
-      await page.fill('input[name=\"email\"], #email', TestDataGenerator.randomEmail());
-      await page.fill('input[name=\"firstName\"], #firstName', 'Guest');
-      await page.fill('input[name=\"lastName\"], #lastName', 'Customer');
-      await page.fill('input[name=\"address\"], #address', '123 Guest Street');
-      await page.fill('input[name=\"city\"], #city', 'Guest City');
-      await page.fill('input[name=\"zipCode\"], #zipCode', '54321');
+      await page.fill('input[name="email"], #email', TestDataGenerator.randomEmail());
+      await page.fill('input[name="firstName"], #firstName', 'Guest');
+      await page.fill('input[name="lastName"], #lastName', 'Customer');
+      await page.fill('input[name="address"], #address', '123 Guest Street');
+      await page.fill('input[name="city"], #city', 'Guest City');
+      await page.fill('input[name="zipCode"], #zipCode', '54321');
       
       Logger.phase(4, 'Complete Guest Payment');
       // Fill payment information
-      await page.fill('input[name=\"cardNumber\"], #cardNumber', '4111111111111111');
-      await page.fill('input[name=\"expiryDate\"], #expiryDate', '12/25');
-      await page.fill('input[name=\"cvv\"], #cvv', '123');
-      await page.fill('input[name=\"cardholderName\"], #cardholderName', 'Guest Customer');
+      await page.fill('input[name="cardNumber"], #cardNumber', '4111111111111111');
+      await page.fill('input[name="expiryDate"], #expiryDate', '12/25');
+      await page.fill('input[name="cvv"], #cvv', '123');
+      await page.fill('input[name="cardholderName"], #cardholderName', 'Guest Customer');
       
       // Complete order
-      const completeOrderButton = page.locator('button[type=\"submit\"], .complete-order-btn, .place-order-btn');
+      const completeOrderButton = page.locator('button[type="submit"], .complete-order-btn, .place-order-btn');
       await completeOrderButton.click();
       
       Logger.phase(5, 'Verify Guest Order Confirmation');
@@ -186,7 +182,7 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
     
     try {
       Logger.phase(1, 'User Setup and Product Addition');
-      const testUser = await createAndRegisterUser(page);
+      const _testUser = await createAndRegisterUser(page);
       
       await navigateToPage(page, '/products');
       
@@ -220,7 +216,7 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       }
       
       Logger.phase(3, 'Remove Item from Cart');
-      const removeButtons = page.locator('.remove-item, .delete-item, button:has-text(\"Remove\")');
+      const removeButtons = page.locator('.remove-item, .delete-item, button:has-text("Remove")');
       if (await removeButtons.first().isVisible()) {
         await removeButtons.first().click();
         await page.waitForTimeout(2000);
@@ -251,7 +247,7 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
     
     try {
       Logger.phase(1, 'Setup User and Proceed to Payment');
-      const testUser = await createAndRegisterUser(page);
+      const _testUser = await createAndRegisterUser(page);
       
       await navigateToPage(page, '/products');
       const productCards = page.locator(SELECTORS.ECOMMERCE.PRODUCT_CARD);
@@ -263,12 +259,12 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       await waitForPageLoad(page);
       
       Logger.phase(2, 'Test Invalid Card Number');
-      await page.fill('input[name=\"cardNumber\"], #cardNumber', '1111111111111111');
-      await page.fill('input[name=\"expiryDate\"], #expiryDate', '12/25');
-      await page.fill('input[name=\"cvv\"], #cvv', '123');
-      await page.fill('input[name=\"cardholderName\"], #cardholderName', 'Test Customer');
+      await page.fill('input[name="cardNumber"], #cardNumber', '1111111111111111');
+      await page.fill('input[name="expiryDate"], #expiryDate', '12/25');
+      await page.fill('input[name="cvv"], #cvv', '123');
+      await page.fill('input[name="cardholderName"], #cardholderName', 'Test Customer');
       
-      const submitButton = page.locator('button[type=\"submit\"], .complete-order-btn');
+      const submitButton = page.locator('button[type="submit"], .complete-order-btn');
       await submitButton.click();
       
       // Check for validation error
@@ -278,8 +274,8 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       }
       
       Logger.phase(3, 'Test Empty Required Fields');
-      await page.fill('input[name=\"cardNumber\"], #cardNumber', '');
-      await page.fill('input[name=\"cvv\"], #cvv', '');
+      await page.fill('input[name="cardNumber"], #cardNumber', '');
+      await page.fill('input[name="cvv"], #cvv', '');
       await submitButton.click();
       
       // Verify required field validation
@@ -289,10 +285,10 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       }
       
       Logger.phase(4, 'Test Valid Payment Data');
-      await page.fill('input[name=\"cardNumber\"], #cardNumber', '4111111111111111');
-      await page.fill('input[name=\"expiryDate\"], #expiryDate', '12/25');
-      await page.fill('input[name=\"cvv\"], #cvv', '123');
-      await page.fill('input[name=\"cardholderName\"], #cardholderName', 'Test Customer');
+      await page.fill('input[name="cardNumber"], #cardNumber', '4111111111111111');
+      await page.fill('input[name="expiryDate"], #expiryDate', '12/25');
+      await page.fill('input[name="cvv"], #cvv', '123');
+      await page.fill('input[name="cardholderName"], #cardholderName', 'Test Customer');
       
       await submitButton.click();
       
@@ -323,7 +319,7 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       Logger.success(`Found ${initialProductCount} initial products`);
       
       Logger.phase(2, 'Test Product Search');
-      const searchInput = page.locator('input[name=\"search\"], #search, .search-input');
+      const searchInput = page.locator('input[name="search"], #search, .search-input');
       if (await searchInput.isVisible()) {
         await searchInput.fill('test');
         await page.keyboard.press('Enter');
@@ -337,7 +333,7 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       }
       
       Logger.phase(3, 'Test Category Filtering');
-      const categoryFilter = page.locator('.category-filter, select[name=\"category\"]');
+      const categoryFilter = page.locator('.category-filter, select[name="category"]');
       if (await categoryFilter.isVisible()) {
         await categoryFilter.selectOption({ label: 'Electronics' });
         await page.waitForTimeout(2000);
@@ -350,14 +346,14 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
       }
       
       Logger.phase(4, 'Test Price Range Filter');
-      const priceMinInput = page.locator('input[name=\"priceMin\"], #priceMin');
-      const priceMaxInput = page.locator('input[name=\"priceMax\"], #priceMax');
+      const priceMinInput = page.locator('input[name="priceMin"], #priceMin');
+      const priceMaxInput = page.locator('input[name="priceMax"], #priceMax');
       
       if (await priceMinInput.isVisible() && await priceMaxInput.isVisible()) {
         await priceMinInput.fill('10');
         await priceMaxInput.fill('100');
         
-        const applyFilterButton = page.locator('.apply-filter, button:has-text(\"Apply\")');
+        const applyFilterButton = page.locator('.apply-filter, button:has-text("Apply")');
         if (await applyFilterButton.isVisible()) {
           await applyFilterButton.click();
           await page.waitForTimeout(2000);

@@ -8,7 +8,7 @@ import {
   cleanupTest
 } from '../helpers/test-helpers';
 import { Config } from '../../../utils/config';
-import { SELECTORS, TEST_TAGS, VALIDATION_MESSAGES } from '../../../utils/constants';
+import { SELECTORS, TEST_TAGS } from '../../../utils/constants';
 
 test.describe('user Authentication - Registration Flow', () => {
 
@@ -29,7 +29,7 @@ test.describe('user Authentication - Registration Flow', () => {
       
       Logger.phase(2, 'Navigate to Registration Form');
       await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       Logger.phase(3, 'Fill Registration Form');
       await page.fill(SELECTORS.AUTH.EMAIL_INPUT, userData.email);
@@ -37,8 +37,8 @@ test.describe('user Authentication - Registration Flow', () => {
       await page.fill(SELECTORS.AUTH.USERNAME_INPUT, userData.username);
       
       // Fill additional fields if they exist
-      const firstNameInput = page.locator('input[name=\"firstName\"], input[name=\"first_name\"], #firstName');
-      const lastNameInput = page.locator('input[name=\"lastName\"], input[name=\"last_name\"], #lastName');
+      const firstNameInput = page.locator('input[name="firstName"], input[name="first_name"], #firstName');
+      const lastNameInput = page.locator('input[name="lastName"], input[name="last_name"], #lastName');
       
       if (await firstNameInput.isVisible()) {
         await firstNameInput.fill('Test');
@@ -82,7 +82,7 @@ test.describe('user Authentication - Registration Flow', () => {
     try {
       Logger.phase(1, 'Navigate to Registration Form');
       await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       for (let i = 0; i < invalidEmails.length; i++) {
         const invalidEmail = invalidEmails[i];
@@ -124,7 +124,7 @@ test.describe('user Authentication - Registration Flow', () => {
     try {
       Logger.phase(1, 'Navigate to Registration Form');
       await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       for (let i = 0; i < weakPasswords.length; i++) {
         const { password, description } = weakPasswords[i];
@@ -168,7 +168,7 @@ test.describe('user Authentication - Registration Flow', () => {
       };
       
       await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       await page.fill(SELECTORS.AUTH.EMAIL_INPUT, userData.email);
       await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, userData.password);
@@ -185,7 +185,7 @@ test.describe('user Authentication - Registration Flow', () => {
       
       Logger.phase(2, 'Attempt to Register with Same Email');
       await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       // Try to register with same email
       await page.fill(SELECTORS.AUTH.EMAIL_INPUT, userData.email);
@@ -217,7 +217,7 @@ test.describe('user Authentication - Registration Flow', () => {
       };
       
       await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       await page.fill(SELECTORS.AUTH.EMAIL_INPUT, userData.email);
       await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, userData.password);
@@ -234,7 +234,7 @@ test.describe('user Authentication - Registration Flow', () => {
       
       Logger.phase(2, 'Attempt to Register with Same Username');
       await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       // Try to register with same username
       await page.fill(SELECTORS.AUTH.EMAIL_INPUT, TestDataGenerator.randomEmail());
@@ -260,7 +260,7 @@ test.describe('user Authentication - Registration Flow', () => {
     try {
       Logger.phase(1, 'Navigate to Registration Form');
       await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
       Logger.phase(2, 'Submit Empty Form');
       await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
@@ -293,9 +293,9 @@ test.describe('user Authentication - Registration Flow', () => {
     try {
       Logger.phase(1, 'Navigate to Registration Form');
       await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
-      const passwordConfirmInput = page.locator('input[name=\"passwordConfirm\"], input[name=\"confirmPassword\"], #passwordConfirm');
+      const passwordConfirmInput = page.locator('input[name="passwordConfirm"], input[name="confirmPassword"], #passwordConfirm');
       
       if (await passwordConfirmInput.isVisible()) {
         Logger.phase(2, 'Test Non-matching Passwords');
@@ -342,9 +342,9 @@ test.describe('user Authentication - Registration Flow', () => {
     try {
       Logger.phase(1, 'Navigate to Registration Form');
       await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       
-      const termsCheckbox = page.locator('input[type=\"checkbox\"][name*=\"terms\"], input[type=\"checkbox\"][name*=\"agree\"], #terms');
+      const termsCheckbox = page.locator('input[type="checkbox"][name*="terms"], input[type="checkbox"][name*="agree"], #terms');
       
       if (await termsCheckbox.isVisible()) {
         Logger.phase(2, 'Attempt Registration Without Accepting Terms');

@@ -6,7 +6,6 @@ import {
   Logger,
   cleanupTest
 } from '../helpers/test-helpers';
-import { Config } from '../../../utils/config';
 import { SELECTORS, TEST_TAGS } from '../../../utils/constants';
 
 test.describe('ecommerce - Product Catalog', () => {
@@ -139,7 +138,7 @@ test.describe('ecommerce - Product Catalog', () => {
       await expect(productCards.first()).toBeVisible({ timeout: 10000 });
       
       Logger.phase(2, 'Test Price Sorting - Low to High');
-      const sortSelect = page.locator('select[name=\"sort\"], .sort-select, #sort');
+      const sortSelect = page.locator('select[name="sort"], .sort-select, #sort');
       if (await sortSelect.isVisible()) {
         await sortSelect.selectOption({ label: /price.*low/i });
         await page.waitForTimeout(2000);
@@ -154,7 +153,7 @@ test.describe('ecommerce - Product Catalog', () => {
         await sortSelect.selectOption({ label: /price.*high/i });
         await page.waitForTimeout(2000);
         
-        const prices = await page.locator(SELECTORS.ECOMMERCE.PRICE_ELEMENT).allTextContents();
+        const _prices = await page.locator(SELECTORS.ECOMMERCE.PRICE_ELEMENT).allTextContents();
         Logger.success('High to low price sorting applied');
       }
       
@@ -184,7 +183,7 @@ test.describe('ecommerce - Product Catalog', () => {
     
     try {
       Logger.phase(1, 'User Setup');
-      const testUser = await createAndRegisterUser(page);
+      const _testUser = await createAndRegisterUser(page);
       
       Logger.phase(2, 'Navigate to Products and Add to Cart');
       await navigateToPage(page, '/products');
@@ -268,7 +267,7 @@ test.describe('ecommerce - Product Catalog', () => {
       
       Logger.phase(3, 'Test Out of Stock Product Behavior');
       // Look for out of stock products
-      const outOfStockProducts = page.locator('.out-of-stock, [data-stock=\"0\"]');
+      const outOfStockProducts = page.locator('.out-of-stock, [data-stock="0"]');
       if (await outOfStockProducts.first().isVisible()) {
         const outOfStockButton = outOfStockProducts.first().locator(SELECTORS.ECOMMERCE.ADD_TO_CART_BUTTON);
         

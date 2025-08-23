@@ -1,6 +1,6 @@
 import { Page, BrowserContext, APIRequestContext, expect } from '@playwright/test';
 import { Config } from '../../../utils/config';
-import { SELECTORS, TIMEOUTS, TEST_DATA } from '../../../utils/constants';
+import { SELECTORS, TIMEOUTS } from '../../../utils/constants';
 
 /**
  * Comprehensive helper functions for E2E testing
@@ -41,6 +41,13 @@ export interface Order {
   status: string;
 }
 
+export interface PaymentData {
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+  name: string;
+}
+
 // ============================================
 // USER MANAGEMENT HELPERS
 // ============================================
@@ -69,7 +76,7 @@ export async function createAndRegisterUser(page: Page, userData?: Partial<TestU
   
   // Navigate to registration page
   await page.goto(Config.getUrl('/register'));
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   
   // Fill registration form
   await page.fill(SELECTORS.AUTH.EMAIL_INPUT, user.email);
@@ -96,7 +103,7 @@ export async function loginUser(page: Page, email: string, password: string): Pr
   console.log(`   🔐 Logging in user: ${email}`);
   
   await page.goto(Config.getUrl('/login'));
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   
   await page.fill(SELECTORS.AUTH.EMAIL_INPUT, email);
   await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, password);
@@ -137,7 +144,7 @@ export async function navigateToPage(page: Page, path: string): Promise<void> {
   console.log(`   🧭 Navigating to: ${path}`);
   
   await page.goto(Config.getUrl(path));
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   
   console.log(`   ✅ Navigation completed`);
 }
@@ -147,7 +154,7 @@ export async function navigateToPage(page: Page, path: string): Promise<void> {
  * @param page - Playwright page object
  */
 export async function waitForPageLoad(page: Page): Promise<void> {
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
   
   // Wait for common loading indicators to disappear
   try {
@@ -203,7 +210,7 @@ export async function addProductToCart(page: Page, productId?: string): Promise<
  * @param page - Playwright page object
  * @param paymentDetails - Optional payment information
  */
-export async function proceedToCheckout(page: Page, paymentDetails?: any): Promise<string> {
+export async function proceedToCheckout(page: Page, paymentDetails?: PaymentData): Promise<string> {
   console.log(`   💳 Proceeding to checkout`);
   
   // Navigate to cart
@@ -246,7 +253,7 @@ export async function proceedToCheckout(page: Page, paymentDetails?: any): Promi
  * @param page - Playwright page object
  * @param paymentData - Payment form data
  */
-export async function fillPaymentForm(page: Page, paymentData: any): Promise<void> {
+export async function fillPaymentForm(page: Page, paymentData: PaymentData): Promise<void> {
   console.log(`   💰 Filling payment form`);
   
   await page.fill('[data-testid="card-number"], input[name="cardNumber"]', paymentData.cardNumber);
@@ -311,8 +318,8 @@ export async function verifySuccessMessage(page: Page, expectedMessage?: string)
 export async function makeAuthenticatedRequest(
   request: APIRequestContext,
   endpoint: string,
-  options: any = {}
-): Promise<any> {
+  options: Record<string, unknown> = {}
+): Promise<unknown> {
   const url = Config.getApiUrl(endpoint);
   
   const response = await request.get(url, {
@@ -337,8 +344,8 @@ export async function makeAuthenticatedRequest(
 export async function createTestDataViaAPI(
   request: APIRequestContext,
   endpoint: string,
-  data: any
-): Promise<any> {
+  data: Record<string, unknown>
+): Promise<unknown> {
   console.log(`   🔧 Creating test data via API: ${endpoint}`);
   
   const response = await request.post(Config.getApiUrl(endpoint), {
