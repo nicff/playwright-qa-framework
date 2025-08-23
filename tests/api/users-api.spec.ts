@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { HTTP_STATUS, TEST_TAGS } from '../../utils/constants';
 import { TestDataGenerator, Logger } from '../e2e/helpers/test-helpers';
-import apiTestData from '../../fixtures/api-test-data.json';
+import apiTestData from '../../fixtures/api-test-data.json' with { type: 'json' };
 
 test.describe('aPI Tests - User Management', () => {
 
