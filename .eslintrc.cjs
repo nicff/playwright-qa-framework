@@ -6,11 +6,11 @@ module.exports = {
     node: true
   },
   extends: [
-    'eslint:recommended',
-    '@typescript-eslint/recommended',
-    '@typescript-eslint/recommended-requiring-type-checking',
-    'plugin:playwright/recommended',
-    'prettier'
+  'eslint:recommended',
+  'plugin:@typescript-eslint/recommended',
+  'plugin:@typescript-eslint/recommended-requiring-type-checking',
+  'plugin:playwright/recommended',
+  'prettier'
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
