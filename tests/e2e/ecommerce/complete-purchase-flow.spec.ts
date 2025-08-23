@@ -13,7 +13,7 @@ import { Config } from '../../../utils/config';
 import { SELECTORS, TEST_TAGS } from '../../../utils/constants';
 import testProducts from '../../../fixtures/test-products.json';
 
-test.describe('Ecommerce - Complete Purchase Flow', () => {
+test.describe('ecommerce - Complete Purchase Flow', () => {
 
   test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.E2E} ${TEST_TAGS.ECOMMERCE} Complete user journey - Registration to Purchase`, async ({ browser }) => {
     Logger.testStart('Complete User Journey - Registration to Purchase');
@@ -57,7 +57,7 @@ test.describe('Ecommerce - Complete Purchase Flow', () => {
       await expect(cartItems).toHaveCount(productCount > 1 ? 2 : 1);
       
       // Check cart total is displayed
-      const cartTotal = page.locator(SELECTORS.ECOMMERCE.PRICE_ELEMENT + ', .cart-total, .total-amount');
+      const cartTotal = page.locator(`${SELECTORS.ECOMMERCE.PRICE_ELEMENT  }, .cart-total, .total-amount`);
       await expect(cartTotal).toBeVisible();
       
       Logger.success('Cart contents validated successfully');

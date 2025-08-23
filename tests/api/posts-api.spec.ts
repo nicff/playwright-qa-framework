@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { HTTP_STATUS, TEST_TAGS } from '../../utils/constants';
-import { TestDataGenerator, Logger } from '../e2e/helpers/test-helpers';
+import { Logger } from '../e2e/helpers/test-helpers';
 import apiTestData from '../../fixtures/api-test-data.json';
 
-test.describe('API Tests - Posts Management', () => {
+test.describe('aPI Tests - Posts Management', () => {
 
   test(`${TEST_TAGS.API} ${TEST_TAGS.SMOKE} Get all posts`, async ({ request }) => {
     Logger.testStart('Get All Posts API Test');
@@ -30,7 +30,7 @@ test.describe('API Tests - Posts Management', () => {
       Logger.success('Post object structure validated');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -59,7 +59,7 @@ test.describe('API Tests - Posts Management', () => {
       Logger.success(`Retrieved ${userPosts.length} posts for user ${userId}`);
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -94,7 +94,7 @@ test.describe('API Tests - Posts Management', () => {
       Logger.success(`Post created successfully with ID: ${createdPost.id}`);
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -130,7 +130,7 @@ test.describe('API Tests - Posts Management', () => {
       Logger.success('Post updated successfully');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -164,7 +164,7 @@ test.describe('API Tests - Posts Management', () => {
       Logger.success('Post title updated successfully via PATCH');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -183,7 +183,7 @@ test.describe('API Tests - Posts Management', () => {
       Logger.success('Post deleted successfully');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -218,7 +218,7 @@ test.describe('API Tests - Posts Management', () => {
       }
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -252,7 +252,7 @@ test.describe('API Tests - Posts Management', () => {
       }
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -292,7 +292,7 @@ test.describe('API Tests - Posts Management', () => {
       }
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });

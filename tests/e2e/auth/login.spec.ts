@@ -1,4 +1,4 @@
-import { test, expect, Page, BrowserContext } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { 
   createAndRegisterUser, 
   loginUser, 
@@ -12,7 +12,7 @@ import {
 import { Config } from '../../../utils/config';
 import { SELECTORS, TEST_TAGS } from '../../../utils/constants';
 
-test.describe('User Authentication - Login Flow', () => {
+test.describe('user Authentication - Login Flow', () => {
   
   test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Valid user login with email`, async ({ browser }) => {
     Logger.testStart('Valid User Login with Email');
@@ -240,7 +240,7 @@ test.describe('User Authentication - Login Flow', () => {
     
     try {
       Logger.phase(1, 'User Login Setup');
-      const testUser = await createAndRegisterUser(page);
+      const _testUser = await createAndRegisterUser(page);
       await verifyUserLoggedIn(page);
       
       Logger.phase(2, 'Logout Process');

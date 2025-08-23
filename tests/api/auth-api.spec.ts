@@ -1,21 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { HTTP_STATUS, TEST_TAGS } from '../../utils/constants';
-import { TestDataGenerator, Logger } from '../e2e/helpers/test-helpers';
+import { Logger } from '../e2e/helpers/test-helpers';
 import apiTestData from '../../fixtures/api-test-data.json';
 
-test.describe('API Tests - Authentication', () => {
+test.describe('authentication API tests', () => {
 
   test(`${TEST_TAGS.API} ${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} User registration via API`, async ({ request }) => {
     Logger.testStart('User Registration via API');
     
     try {
-      const registrationData = {
-        email: TestDataGenerator.randomEmail(),
-        password: TestDataGenerator.randomPassword(),
-        firstName: 'Test',
-        lastName: 'User'
-      };
-      
       Logger.phase(1, 'Send registration request');
       const response = await request.post(`${apiTestData.endpoints.reqres.baseUrl}/register`, {
         data: {
@@ -35,11 +28,11 @@ test.describe('API Tests - Authentication', () => {
       expect(registrationResult).toHaveProperty('token');
       expect(typeof registrationResult.token).toBe('string');
       
-      Logger.success(`User registered successfully with ID: ${registrationResult.id}`);
-      Logger.success(`Registration token: ${registrationResult.token.substring(0, 10)}...`);
+      Logger.success(`User registered successfully with ID: ${String(registrationResult.id)}`);
+      Logger.success(`Registration token: ${String(registrationResult.token).substring(0, 10)}...`);
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -72,7 +65,7 @@ test.describe('API Tests - Authentication', () => {
       Logger.success(`Login successful, token: ${loginResult.token.substring(0, 10)}...`);
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -122,7 +115,7 @@ test.describe('API Tests - Authentication', () => {
       }
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -168,7 +161,7 @@ test.describe('API Tests - Authentication', () => {
       }
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -205,7 +198,7 @@ test.describe('API Tests - Authentication', () => {
       Logger.success('Request with valid token successful');
       
       Logger.phase(3, 'Test request with invalid token');
-      const invalidTokenResponse = await request.get(`${apiTestData.endpoints.reqres.baseUrl}/users`, {
+      const _invalidTokenResponse = await request.get(`${apiTestData.endpoints.reqres.baseUrl}/users`, {
         headers: {
           'Authorization': 'Bearer invalid-token-123',
           'Content-Type': 'application/json'
@@ -224,7 +217,7 @@ test.describe('API Tests - Authentication', () => {
       Logger.success('Request without token handled appropriately');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -267,7 +260,7 @@ test.describe('API Tests - Authentication', () => {
       expect(successfulRequests + rateLimitedRequests).toBe(requestCount);
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -304,9 +297,9 @@ test.describe('API Tests - Authentication', () => {
       Logger.phase(3, 'Simulate expired token scenario');
       // In a real application, we would wait for token expiration or use an expired token
       // For demonstration, we'll use a clearly expired/invalid token format
-      const expiredToken = 'expired-' + token;
+      const expiredToken = `expired-${  token}`;
       
-      const expiredTokenResponse = await request.get(`${apiTestData.endpoints.reqres.baseUrl}/users`, {
+      const _expiredTokenResponse = await request.get(`${apiTestData.endpoints.reqres.baseUrl}/users`, {
         headers: {
           'Authorization': `Bearer ${expiredToken}`,
           'Content-Type': 'application/json'
@@ -317,7 +310,7 @@ test.describe('API Tests - Authentication', () => {
       Logger.success('Expired token scenario tested');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });

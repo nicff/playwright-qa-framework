@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { Config } from '../../utils/config';
-import { API_ENDPOINTS, HTTP_STATUS, TEST_TAGS } from '../../utils/constants';
+import { HTTP_STATUS, TEST_TAGS } from '../../utils/constants';
 import { TestDataGenerator, Logger } from '../e2e/helpers/test-helpers';
 import apiTestData from '../../fixtures/api-test-data.json';
 
-test.describe('API Tests - User Management', () => {
+test.describe('aPI Tests - User Management', () => {
 
   test(`${TEST_TAGS.API} ${TEST_TAGS.SMOKE} Get all users from JSONPlaceholder`, async ({ request }) => {
     Logger.testStart('Get All Users API Test');
@@ -31,7 +30,7 @@ test.describe('API Tests - User Management', () => {
       Logger.success('User object structure validated');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -55,7 +54,7 @@ test.describe('API Tests - User Management', () => {
       Logger.success(`Successfully retrieved user: ${user.name}`);
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -105,7 +104,7 @@ test.describe('API Tests - User Management', () => {
       Logger.success(`User created successfully with ID: ${createdUser.id}`);
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -153,7 +152,7 @@ test.describe('API Tests - User Management', () => {
       Logger.success('User updated successfully');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -172,7 +171,7 @@ test.describe('API Tests - User Management', () => {
       Logger.success('User deleted successfully');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -191,7 +190,7 @@ test.describe('API Tests - User Management', () => {
       Logger.success('404 error correctly returned for non-existent user');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });
@@ -221,7 +220,7 @@ test.describe('API Tests - User Management', () => {
       Logger.success('Invalid data handled appropriately');
       
     } catch (error) {
-      Logger.error(`API test failed: ${error}`);
+      Logger.error(`API test failed: ${String(error)}`);
       throw error;
     }
   });

@@ -10,7 +10,7 @@ import {
 import { Config } from '../../../utils/config';
 import { SELECTORS, TEST_TAGS, VALIDATION_MESSAGES } from '../../../utils/constants';
 
-test.describe('User Authentication - Registration Flow', () => {
+test.describe('user Authentication - Registration Flow', () => {
 
   test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Valid user registration`, async ({ browser }) => {
     Logger.testStart('Valid User Registration');
@@ -53,7 +53,7 @@ test.describe('User Authentication - Registration Flow', () => {
       Logger.phase(5, 'Verify Successful Registration');
       // Wait for either redirect to dashboard or success message
       await Promise.race([
-        expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
+        await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
         verifySuccessMessage(page),
         verifyUserLoggedIn(page)
       ]);
@@ -177,7 +177,7 @@ test.describe('User Authentication - Registration Flow', () => {
       
       // Wait for successful registration
       await Promise.race([
-        expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
+        await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
         verifyUserLoggedIn(page)
       ]);
       
@@ -226,7 +226,7 @@ test.describe('User Authentication - Registration Flow', () => {
       
       // Wait for successful registration
       await Promise.race([
-        expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
+        await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
         verifyUserLoggedIn(page)
       ]);
       
@@ -319,7 +319,7 @@ test.describe('User Authentication - Registration Flow', () => {
         
         // Should proceed without password mismatch error
         await Promise.race([
-          expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
+          await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
           verifyUserLoggedIn(page)
         ]);
         
@@ -365,7 +365,7 @@ test.describe('User Authentication - Registration Flow', () => {
         await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
         
         await Promise.race([
-          expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
+          await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
           verifyUserLoggedIn(page)
         ]);
         

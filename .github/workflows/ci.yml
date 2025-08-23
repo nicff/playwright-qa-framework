@@ -20,9 +20,9 @@ name: CI Pipeline – Playwright API & E2E Tests
 # WORKFLOW TRIGGERS
 # =============================================================================
 on:
-  # Trigger on pushes to main and develop branches
+  # Trigger on pushes to main branch
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
     paths-ignore:
       - '*.md'
       - 'docs/**'

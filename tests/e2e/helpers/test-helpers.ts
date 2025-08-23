@@ -267,7 +267,7 @@ export async function fillPaymentForm(page: Page, paymentData: any): Promise<voi
  */
 export async function verifyUserLoggedIn(page: Page): Promise<void> {
   // Check for logout button or user profile indicator
-  await expect(page.locator(SELECTORS.AUTH.LOGOUT_BUTTON + ', .user-profile, .user-menu')).toBeVisible({ timeout: TIMEOUTS.MEDIUM });
+  await expect(page.locator(`${SELECTORS.AUTH.LOGOUT_BUTTON  }, .user-profile, .user-menu`)).toBeVisible({ timeout: TIMEOUTS.MEDIUM });
 }
 
 /**

@@ -9,7 +9,7 @@ import {
 import { Config } from '../../../utils/config';
 import { SELECTORS, TEST_TAGS } from '../../../utils/constants';
 
-test.describe('Ecommerce - Product Catalog', () => {
+test.describe('ecommerce - Product Catalog', () => {
 
   test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.ECOMMERCE} Product catalog page loads and displays products`, async ({ browser }) => {
     Logger.testStart('Product Catalog Page Load and Display');
@@ -273,8 +273,8 @@ test.describe('Ecommerce - Product Catalog', () => {
         const outOfStockButton = outOfStockProducts.first().locator(SELECTORS.ECOMMERCE.ADD_TO_CART_BUTTON);
         
         if (await outOfStockButton.isVisible()) {
-          const isDisabled = await outOfStockButton.isDisabled();
-          expect(isDisabled).toBeTruthy();
+          const isDisabled = outOfStockButton;
+          await expect(isDisabled).toBeDisabled();
           Logger.success('Out of stock product correctly disables add to cart button');
         }
       }

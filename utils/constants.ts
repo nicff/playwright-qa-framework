@@ -14,16 +14,16 @@ export const TIMEOUTS = {
 
 // Test tags for filtering and categorization
 export const TEST_TAGS = {
-  SMOKE: '@smoke',
-  REGRESSION: '@regression', 
-  CRITICAL: '@critical',
-  SANITY: '@sanity',
-  API: '@api',
-  E2E: '@e2e',
-  AUTH: '@auth',
-  ECOMMERCE: '@ecommerce',
-  PAYMENT: '@payment',
-  MOBILE: '@mobile'
+  SMOKE: '[smoke]',
+  REGRESSION: '[regression]', 
+  CRITICAL: '[critical]',
+  SANITY: '[sanity]',
+  API: '[api]',
+  E2E: '[e2e]',
+  AUTH: '[auth]',
+  ECOMMERCE: '[ecommerce]',
+  PAYMENT: '[payment]',
+  MOBILE: '[mobile]'
 } as const;
 
 // Selector patterns for common UI elements

@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test';
 import { Config } from '../../utils/config';
 import { Logger } from '../e2e/helpers/test-helpers';
 
-test.describe('Environment Configuration Tests', () => {
+test.describe('environment Configuration Tests', () => {
   
-  test('Verify environment configuration is properly loaded', async () => {
+  test('verify environment configuration is properly loaded', () => {
     Logger.testStart('Environment Configuration Verification');
     
     Logger.phase(1, 'Check base configuration');
@@ -30,7 +30,7 @@ test.describe('Environment Configuration Tests', () => {
     Logger.success(`Current environment: ${environment}`);
   });
 
-  test('Verify URL generation methods work correctly', async () => {
+  test('verify URL generation methods work correctly', () => {
     Logger.testStart('URL Generation Methods');
     
     Logger.phase(1, 'Test getUrl method');
@@ -53,7 +53,7 @@ test.describe('Environment Configuration Tests', () => {
     Logger.success(`Posts API URL: ${postsApiUrl}`);
   });
 
-  test('Verify performance thresholds are set', async () => {
+  test('verify performance thresholds are set', () => {
     Logger.testStart('Performance Thresholds Configuration');
     
     Logger.phase(1, 'Check performance settings');
@@ -64,7 +64,7 @@ test.describe('Environment Configuration Tests', () => {
     Logger.success(`Max API response time: ${Config.PERFORMANCE.maxApiResponseTime}ms`);
   });
 
-  test('Verify external services configuration', async () => {
+  test('verify external services configuration', () => {
     Logger.testStart('External Services Configuration');
     
     Logger.phase(1, 'Check external service URLs');
