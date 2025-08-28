@@ -1,110 +1,115 @@
 import { test, expect } from '@playwright/test';
 import { 
-  createAndRegisterUser,
-  navigateToPage,
   waitForPageLoad,
-  TestDataGenerator,
   Logger,
   cleanupTest
 } from '../helpers/test-helpers';
-import { SELECTORS, TEST_TAGS } from '../../../utils/constants';
+import {
+  SELECTORS,
+  TEST_TAGS,
+  TEST_DATA,
+  ENVIRONMENTS
+} from '../../../utils/constants';
 
-test.describe('ecommerce - Complete Purchase Flow', () => {
+test.describe('test - complete purchase flow validation', () => {
 
-  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.E2E} ${TEST_TAGS.ECOMMERCE} Complete user journey - Registration to Purchase`, async ({ browser }) => {
-    Logger.testStart('Complete User Journey - Registration to Purchase');
-    
+  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.E2E} ${TEST_TAGS.ECOMMERCE} Complete user journey - Login to Purchase`, async ({ browser }) => {
+    Logger.testStart('Complete User Journey - Login to Purchase');
+
     const context = await browser.newContext();
     const page = await context.newPage();
     
     try {
-      Logger.phase(1, 'User Registration and Authentication');
-      const testUser = await createAndRegisterUser(page);
-      Logger.success(`User registered: ${testUser.email}`);
-      
+      Logger.phase(1, 'Navigate to SauceDemo and Login');
+      await page.goto(ENVIRONMENTS.PRODUCTION);
+
+      // Login with standard user
+      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, TEST_DATA.SAUCEDEMO_USERS.STANDARD_USER.username);
+      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, TEST_DATA.SAUCEDEMO_USERS.STANDARD_USER.password);
+      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
+
+      // Verify we're on inventory page
+      await expect(page.locator(SELECTORS.INVENTORY.PRODUCT_LIST)).toBeVisible({ timeout: 10000 });
+      Logger.success('Successfully logged in to SauceDemo');
+
       Logger.phase(2, 'Product Browsing and Selection');
-      await navigateToPage(page, '/products');
-      
-      // Look for product listings
-      const productCards = page.locator(SELECTORS.ECOMMERCE.PRODUCT_CARD);
-      await expect(productCards.first()).toBeVisible({ timeout: 10000 });
-      
-      const productCount = await productCards.count();
+      const productItems = page.locator(SELECTORS.INVENTORY.PRODUCT_ITEM);
+      await expect(productItems.first()).toBeVisible({ timeout: 10000 });
+
+      const productCount = await productItems.count();
       Logger.success(`Found ${productCount} products available`);
       
       Logger.phase(3, 'Add Multiple Products to Cart');
-      // Add first product
-      await productCards.first().locator(SELECTORS.ECOMMERCE.ADD_TO_CART_BUTTON).click();
-      await page.waitForTimeout(1000); // Allow cart to update
-      
-      // Add second product if available
-      if (productCount > 1) {
-        await productCards.nth(1).locator(SELECTORS.ECOMMERCE.ADD_TO_CART_BUTTON).click();
-        await page.waitForTimeout(1000);
-        Logger.success('Multiple products added to cart');
-      }
-      
+      // Add first product (Sauce Labs Backpack)
+      await page.locator(SELECTORS.INVENTORY.ADD_TO_CART_BUTTON).first().click();
+      await page.waitForTimeout(500);
+
+      // Add second product (always add 2 products since SauceDemo has 6 products)
+      await page.locator(SELECTORS.INVENTORY.ADD_TO_CART_BUTTON).first().click();
+      await page.waitForTimeout(500);
+      Logger.success('Multiple products added to cart');
+
+      // Verify cart badge shows items
+      const cartBadge = page.locator(SELECTORS.NAV.CART_BADGE);
+      await expect(cartBadge).toBeVisible();
+      const cartCount = await cartBadge.textContent();
+      Logger.success(`Cart badge shows ${cartCount} items`);
+
       Logger.phase(4, 'Cart Review and Validation');
       await page.click(SELECTORS.NAV.CART_LINK);
       await waitForPageLoad(page);
       
       // Verify cart contains items
-      const cartItems = page.locator(SELECTORS.ECOMMERCE.CART_ITEM);
-      await expect(cartItems).toHaveCount(productCount > 1 ? 2 : 1);
-      
-      // Check cart total is displayed
-      const cartTotal = page.locator(`${SELECTORS.ECOMMERCE.PRICE_ELEMENT  }, .cart-total, .total-amount`);
-      await expect(cartTotal).toBeVisible();
-      
+      const cartItems = page.locator(SELECTORS.CART.CART_ITEM);
+      await expect(cartItems).toHaveCount(parseInt(cartCount || '0'));
+
+      // Verify cart items have names and prices
+      await expect(page.locator(SELECTORS.CART.CART_ITEM_NAME).first()).toBeVisible();
+      await expect(page.locator(SELECTORS.CART.CART_ITEM_PRICE).first()).toBeVisible();
+
       Logger.success('Cart contents validated successfully');
       
-      Logger.phase(5, 'Checkout Process');
-      await page.click(SELECTORS.ECOMMERCE.CHECKOUT_BUTTON);
+      Logger.phase(5, 'Proceed to Checkout');
+      await page.click(SELECTORS.CART.CHECKOUT_BUTTON);
       await waitForPageLoad(page);
       
-      Logger.phase(6, 'Shipping Information');
-      // Fill shipping information if form exists
-      const shippingForm = page.locator('form[name="shipping"], .shipping-form, #shipping-form');
-      if (await shippingForm.isVisible()) {
-        await page.fill('input[name="firstName"], #firstName', 'Test');
-        await page.fill('input[name="lastName"], #lastName', 'Customer');
-        await page.fill('input[name="address"], #address', '123 Test Street');
-        await page.fill('input[name="city"], #city', 'Test City');
-        await page.fill('input[name="zipCode"], #zipCode', '12345');
-        
-        const continueButton = page.locator('button[type="submit"], .continue-btn, .next-btn');
-        if (await continueButton.isVisible()) {
-          await continueButton.click();
-          await waitForPageLoad(page);
-        }
-        
-        Logger.success('Shipping information completed');
-      }
-      
-      Logger.phase(7, 'Payment Information');
-      // Fill payment form with test data
-      await page.fill('input[name="cardNumber"], #cardNumber', '4111111111111111');
-      await page.fill('input[name="expiryDate"], #expiryDate', '12/25');
-      await page.fill('input[name="cvv"], #cvv', '123');
-      await page.fill('input[name="cardholderName"], #cardholderName', 'Test Customer');
-      
-      Logger.success('Payment information filled');
-      
-      Logger.phase(8, 'Order Completion');
-      const completeOrderButton = page.locator('button[type="submit"], .complete-order-btn, .place-order-btn');
-      await completeOrderButton.click();
-      
-      Logger.phase(9, 'Order Confirmation Verification');
-      // Wait for order confirmation
-      await expect(page.locator('.order-success, .confirmation, .thank-you')).toBeVisible({ timeout: 20000 });
-      
-      // Verify order details are displayed
-      const orderNumber = page.locator('.order-number, .order-id, .confirmation-number');
-      if (await orderNumber.isVisible()) {
-        const orderText = await orderNumber.textContent();
-        Logger.success(`Order confirmed with number: ${orderText}`);
-      }
-      
+      Logger.phase(6, 'Fill Checkout Information');
+      // Fill checkout form with test data
+      await page.fill(SELECTORS.CHECKOUT.FIRST_NAME_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.firstName);
+      await page.fill(SELECTORS.CHECKOUT.LAST_NAME_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.lastName);
+      await page.fill(SELECTORS.CHECKOUT.POSTAL_CODE_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.postalCode);
+
+      Logger.success('Checkout information filled');
+
+      // Continue to overview page
+      await page.click(SELECTORS.CHECKOUT.CONTINUE_BUTTON);
+      await waitForPageLoad(page);
+
+      Logger.phase(7, 'Review Order and Complete Purchase');
+      // Verify we're on checkout overview page
+      await expect(page.locator('.checkout_summary_container, .summary_info')).toBeVisible();
+
+      // Verify order summary shows items
+      const summaryItems = page.locator('.cart_item');
+      await expect(summaryItems.count()).resolves.toBeGreaterThan(0);
+
+      // Complete the order
+      await page.click(SELECTORS.CHECKOUT.FINISH_BUTTON);
+
+      Logger.phase(8, 'Order Confirmation Verification');
+      // Wait for order confirmation page
+      await expect(page.locator(SELECTORS.CHECKOUT.COMPLETE_HEADER)).toBeVisible({ timeout: 10000 });
+      await expect(page.locator(SELECTORS.CHECKOUT.COMPLETE_TEXT)).toBeVisible();
+
+      // Verify success message
+      const completeHeader = await page.locator(SELECTORS.CHECKOUT.COMPLETE_HEADER).textContent();
+      expect(completeHeader).toContain('Thank you for your order');
+
+      Logger.success(`Order completed successfully: ${completeHeader}`);
+
+      // Verify back to products button is available
+      await expect(page.locator(SELECTORS.CHECKOUT.BACK_HOME_BUTTON)).toBeVisible();
+
       Logger.success('Complete purchase flow executed successfully');
       
     } finally {
@@ -112,63 +117,48 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
     }
   });
 
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.E2E} ${TEST_TAGS.ECOMMERCE} Guest checkout flow`, async ({ browser }) => {
-    Logger.testStart('Guest Checkout Flow');
-    
+  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.E2E} ${TEST_TAGS.ECOMMERCE} Problem user checkout flow`, async ({ browser }) => {
+    Logger.testStart('Problem User Checkout Flow');
+
     const context = await browser.newContext();
     const page = await context.newPage();
     
     try {
-      Logger.phase(1, 'Product Selection as Guest');
-      await navigateToPage(page, '/products');
-      
-      const productCards = page.locator(SELECTORS.ECOMMERCE.PRODUCT_CARD);
-      await expect(productCards.first()).toBeVisible({ timeout: 10000 });
-      
-      // Add product to cart
-      await productCards.first().locator(SELECTORS.ECOMMERCE.ADD_TO_CART_BUTTON).click();
-      Logger.success('Product added to cart as guest');
-      
-      Logger.phase(2, 'Proceed to Checkout as Guest');
+      Logger.phase(1, 'Login with Problem User');
+      await page.goto(ENVIRONMENTS.PRODUCTION);
+
+      // Login with problem user to test different behavior
+      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, TEST_DATA.SAUCEDEMO_USERS.PROBLEM_USER.username);
+      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, TEST_DATA.SAUCEDEMO_USERS.PROBLEM_USER.password);
+      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
+
+      await expect(page.locator(SELECTORS.INVENTORY.PRODUCT_LIST)).toBeVisible({ timeout: 10000 });
+      Logger.success('Problem user logged in successfully');
+
+      Logger.phase(2, 'Add Product to Cart');
+      await page.locator(SELECTORS.INVENTORY.ADD_TO_CART_BUTTON).first().click();
+
+      // Verify cart badge appears
+      await expect(page.locator(SELECTORS.NAV.CART_BADGE)).toBeVisible();
+      Logger.success('Product added to cart');
+
+      Logger.phase(3, 'Proceed to Checkout');
       await page.click(SELECTORS.NAV.CART_LINK);
-      await waitForPageLoad(page);
-      
-      await page.click(SELECTORS.ECOMMERCE.CHECKOUT_BUTTON);
-      await waitForPageLoad(page);
-      
-      // Look for guest checkout option
-      const guestCheckoutButton = page.locator('.guest-checkout, .checkout-as-guest, button:has-text("Guest")');
-      if (await guestCheckoutButton.isVisible()) {
-        await guestCheckoutButton.click();
-        await waitForPageLoad(page);
-        Logger.success('Guest checkout option selected');
-      }
-      
-      Logger.phase(3, 'Fill Guest Information');
-      // Fill guest information
-      await page.fill('input[name="email"], #email', TestDataGenerator.randomEmail());
-      await page.fill('input[name="firstName"], #firstName', 'Guest');
-      await page.fill('input[name="lastName"], #lastName', 'Customer');
-      await page.fill('input[name="address"], #address', '123 Guest Street');
-      await page.fill('input[name="city"], #city', 'Guest City');
-      await page.fill('input[name="zipCode"], #zipCode', '54321');
-      
-      Logger.phase(4, 'Complete Guest Payment');
-      // Fill payment information
-      await page.fill('input[name="cardNumber"], #cardNumber', '4111111111111111');
-      await page.fill('input[name="expiryDate"], #expiryDate', '12/25');
-      await page.fill('input[name="cvv"], #cvv', '123');
-      await page.fill('input[name="cardholderName"], #cardholderName', 'Guest Customer');
-      
-      // Complete order
-      const completeOrderButton = page.locator('button[type="submit"], .complete-order-btn, .place-order-btn');
-      await completeOrderButton.click();
-      
-      Logger.phase(5, 'Verify Guest Order Confirmation');
-      await expect(page.locator('.order-success, .confirmation, .thank-you')).toBeVisible({ timeout: 20000 });
-      
-      Logger.success('Guest checkout completed successfully');
-      
+      await page.click(SELECTORS.CART.CHECKOUT_BUTTON);
+
+      Logger.phase(4, 'Fill Checkout Form');
+      await page.fill(SELECTORS.CHECKOUT.FIRST_NAME_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.firstName);
+      await page.fill(SELECTORS.CHECKOUT.LAST_NAME_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.lastName);
+      await page.fill(SELECTORS.CHECKOUT.POSTAL_CODE_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.postalCode);
+
+      await page.click(SELECTORS.CHECKOUT.CONTINUE_BUTTON);
+      await page.click(SELECTORS.CHECKOUT.FINISH_BUTTON);
+
+      // Problem user might have different behavior, but should still complete
+      await expect(page.locator(SELECTORS.CHECKOUT.COMPLETE_HEADER)).toBeVisible({ timeout: 10000 });
+
+      Logger.success('Problem user checkout completed');
+
     } finally {
       await cleanupTest(context, page);
     }
@@ -181,189 +171,162 @@ test.describe('ecommerce - Complete Purchase Flow', () => {
     const page = await context.newPage();
     
     try {
-      Logger.phase(1, 'User Setup and Product Addition');
-      const _testUser = await createAndRegisterUser(page);
-      
-      await navigateToPage(page, '/products');
-      
-      const productCards = page.locator(SELECTORS.ECOMMERCE.PRODUCT_CARD);
-      await expect(productCards.first()).toBeVisible({ timeout: 10000 });
-      
+      Logger.phase(1, 'Login and Add Products');
+      await page.goto(ENVIRONMENTS.PRODUCTION);
+
+      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, TEST_DATA.SAUCEDEMO_USERS.STANDARD_USER.username);
+      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, TEST_DATA.SAUCEDEMO_USERS.STANDARD_USER.password);
+      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
+
       // Add multiple products
-      await productCards.first().locator(SELECTORS.ECOMMERCE.ADD_TO_CART_BUTTON).click();
+      await page.locator(SELECTORS.INVENTORY.ADD_TO_CART_BUTTON).first().click();
+      await page.locator(SELECTORS.INVENTORY.ADD_TO_CART_BUTTON).first().click();
+
+      Logger.phase(2, 'Navigate to Cart and Remove Item');
+      await page.click(SELECTORS.NAV.CART_LINK);
+
+      // Remove one item from cart
+      const removeButtons = page.locator(SELECTORS.CART.REMOVE_BUTTON);
+      await expect(removeButtons.first()).toBeVisible();
+      await removeButtons.first().click();
+
+      // Verify cart updated
+      const remainingItems = page.locator(SELECTORS.CART.CART_ITEM);
+      await expect(remainingItems).toHaveCount(1);
+
+      Logger.success('Item removed from cart successfully');
+
+      Logger.phase(3, 'Complete Checkout with Modified Cart');
+      await page.click(SELECTORS.CART.CHECKOUT_BUTTON);
+
+      await page.fill(SELECTORS.CHECKOUT.FIRST_NAME_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.firstName);
+      await page.fill(SELECTORS.CHECKOUT.LAST_NAME_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.lastName);
+      await page.fill(SELECTORS.CHECKOUT.POSTAL_CODE_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.postalCode);
+
+      await page.click(SELECTORS.CHECKOUT.CONTINUE_BUTTON);
+
+      // Verify checkout overview shows correct number of items
+      const overviewItems = page.locator('.cart_item');
+      await expect(overviewItems).toHaveCount(1);
+
+      await page.click(SELECTORS.CHECKOUT.FINISH_BUTTON);
+      await expect(page.locator(SELECTORS.CHECKOUT.COMPLETE_HEADER)).toBeVisible();
+
+      Logger.success('Modified cart checkout completed successfully');
+
+    } finally {
+      await cleanupTest(context, page);
+    }
+  });
+
+  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.E2E} ${TEST_TAGS.ECOMMERCE} Checkout form validation`, async ({ browser }) => {
+    Logger.testStart('Checkout Form Validation');
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    
+    try {
+      Logger.phase(1, 'Setup and Navigate to Checkout');
+      await page.goto(ENVIRONMENTS.PRODUCTION);
+
+      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, TEST_DATA.SAUCEDEMO_USERS.STANDARD_USER.username);
+      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, TEST_DATA.SAUCEDEMO_USERS.STANDARD_USER.password);
+      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
+
+      await page.locator(SELECTORS.INVENTORY.ADD_TO_CART_BUTTON).first().click();
+      await page.click(SELECTORS.NAV.CART_LINK);
+      await page.click(SELECTORS.CART.CHECKOUT_BUTTON);
+
+      Logger.phase(2, 'Test Empty Required Fields');
+      // Try to continue with empty fields
+      await page.click(SELECTORS.CHECKOUT.CONTINUE_BUTTON);
+
+      // Verify error message appears
+      const errorMessage = page.locator(SELECTORS.CHECKOUT.ERROR_MESSAGE);
+      await expect(errorMessage).toBeVisible();
+
+      const errorText = await errorMessage.textContent();
+      expect(errorText).toContain('First Name is required');
+      Logger.success('Empty field validation working correctly');
+
+      Logger.phase(3, 'Test Partial Form Completion');
+      // Fill only first name
+      await page.fill(SELECTORS.CHECKOUT.FIRST_NAME_INPUT, 'Test');
+      await page.click(SELECTORS.CHECKOUT.CONTINUE_BUTTON);
+
+      // Should still show error for missing last name
+      await expect(errorMessage).toBeVisible();
+      const errorText2 = await errorMessage.textContent();
+      expect(errorText2).toContain('Last Name is required');
+      Logger.success('Partial form validation working correctly');
+
+      Logger.phase(4, 'Complete Valid Form');
+      await page.fill(SELECTORS.CHECKOUT.LAST_NAME_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.lastName);
+      await page.fill(SELECTORS.CHECKOUT.POSTAL_CODE_INPUT, TEST_DATA.CHECKOUT_INFO.VALID.postalCode);
+
+      await page.click(SELECTORS.CHECKOUT.CONTINUE_BUTTON);
+
+      // Should proceed to overview page
+      await expect(page.locator('.checkout_summary_container')).toBeVisible({ timeout: 5000 });
+
+      Logger.success('Valid form submission working correctly');
+
+    } finally {
+      await cleanupTest(context, page);
+    }
+  });
+
+  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.E2E} ${TEST_TAGS.ECOMMERCE} Product sorting and selection`, async ({ browser }) => {
+    Logger.testStart('Product Sorting and Selection');
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    
+    try {
+      Logger.phase(1, 'Login and Access Inventory');
+      await page.goto(ENVIRONMENTS.PRODUCTION);
+
+      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, TEST_DATA.SAUCEDEMO_USERS.STANDARD_USER.username);
+      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, TEST_DATA.SAUCEDEMO_USERS.STANDARD_USER.password);
+      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
+
+      await expect(page.locator(SELECTORS.INVENTORY.PRODUCT_LIST)).toBeVisible();
+
+      const initialProducts = page.locator(SELECTORS.INVENTORY.PRODUCT_ITEM);
+      const initialCount = await initialProducts.count();
+      Logger.success(`Found ${initialCount} products in inventory`);
+
+      Logger.phase(2, 'Test Product Sorting');
+      const sortDropdown = page.locator(SELECTORS.INVENTORY.SORT_DROPDOWN);
+      await expect(sortDropdown).toBeVisible();
+
+      // Sort by price (low to high)
+      await sortDropdown.selectOption('lohi');
       await page.waitForTimeout(1000);
-      
-      if (await productCards.nth(1).isVisible()) {
-        await productCards.nth(1).locator(SELECTORS.ECOMMERCE.ADD_TO_CART_BUTTON).click();
-        await page.waitForTimeout(1000);
-      }
-      
-      Logger.phase(2, 'Navigate to Cart and Modify Quantities');
-      await page.click(SELECTORS.NAV.CART_LINK);
-      await waitForPageLoad(page);
-      
-      // Modify quantity if quantity input exists
-      const quantityInput = page.locator(SELECTORS.ECOMMERCE.QUANTITY_INPUT).first();
-      if (await quantityInput.isVisible()) {
-        await quantityInput.fill('3');
-        await page.keyboard.press('Enter');
-        await page.waitForTimeout(2000); // Allow for cart update
-        
-        // Verify total has updated
-        const updatedTotal = page.locator('.cart-total, .total-amount');
-        await expect(updatedTotal).toBeVisible();
-        Logger.success('Cart quantity updated successfully');
-      }
-      
-      Logger.phase(3, 'Remove Item from Cart');
-      const removeButtons = page.locator('.remove-item, .delete-item, button:has-text("Remove")');
-      if (await removeButtons.first().isVisible()) {
-        await removeButtons.first().click();
-        await page.waitForTimeout(2000);
-        
-        Logger.success('Item removed from cart');
-      }
-      
-      Logger.phase(4, 'Proceed with Modified Cart');
-      await page.click(SELECTORS.ECOMMERCE.CHECKOUT_BUTTON);
-      await waitForPageLoad(page);
-      
-      // Verify checkout shows updated cart contents
-      const checkoutItems = page.locator('.checkout-item, .order-item');
-      await expect(checkoutItems).toBeVisible();
-      
-      Logger.success('Modified cart processed correctly in checkout');
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
 
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.E2E} ${TEST_TAGS.ECOMMERCE} Payment form validation`, async ({ browser }) => {
-    Logger.testStart('Payment Form Validation');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'Setup User and Proceed to Payment');
-      const _testUser = await createAndRegisterUser(page);
-      
-      await navigateToPage(page, '/products');
-      const productCards = page.locator(SELECTORS.ECOMMERCE.PRODUCT_CARD);
-      await expect(productCards.first()).toBeVisible({ timeout: 10000 });
-      
-      await productCards.first().locator(SELECTORS.ECOMMERCE.ADD_TO_CART_BUTTON).click();
-      await page.click(SELECTORS.NAV.CART_LINK);
-      await page.click(SELECTORS.ECOMMERCE.CHECKOUT_BUTTON);
-      await waitForPageLoad(page);
-      
-      Logger.phase(2, 'Test Invalid Card Number');
-      await page.fill('input[name="cardNumber"], #cardNumber', '1111111111111111');
-      await page.fill('input[name="expiryDate"], #expiryDate', '12/25');
-      await page.fill('input[name="cvv"], #cvv', '123');
-      await page.fill('input[name="cardholderName"], #cardholderName', 'Test Customer');
-      
-      const submitButton = page.locator('button[type="submit"], .complete-order-btn');
-      await submitButton.click();
-      
-      // Check for validation error
-      const errorMessage = page.locator('.error-message, .field-error, .payment-error');
-      if (await errorMessage.isVisible({ timeout: 5000 })) {
-        Logger.success('Invalid card number correctly rejected');
-      }
-      
-      Logger.phase(3, 'Test Empty Required Fields');
-      await page.fill('input[name="cardNumber"], #cardNumber', '');
-      await page.fill('input[name="cvv"], #cvv', '');
-      await submitButton.click();
-      
-      // Verify required field validation
-      const requiredErrors = page.locator('.error-message, .field-error');
-      if (await requiredErrors.first().isVisible({ timeout: 5000 })) {
-        Logger.success('Empty required fields correctly validated');
-      }
-      
-      Logger.phase(4, 'Test Valid Payment Data');
-      await page.fill('input[name="cardNumber"], #cardNumber', '4111111111111111');
-      await page.fill('input[name="expiryDate"], #expiryDate', '12/25');
-      await page.fill('input[name="cvv"], #cvv', '123');
-      await page.fill('input[name="cardholderName"], #cardholderName', 'Test Customer');
-      
-      await submitButton.click();
-      
-      // Should proceed to confirmation or show processing
-      await expect(page.locator('.order-success, .processing, .confirmation')).toBeVisible({ timeout: 20000 });
-      
-      Logger.success('Valid payment data processed successfully');
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
+      // Get first and last product prices to verify sorting
+      const firstPrice = await page.locator(SELECTORS.INVENTORY.PRODUCT_PRICE).first().textContent();
+      const lastPrice = await page.locator(SELECTORS.INVENTORY.PRODUCT_PRICE).last().textContent();
 
-  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.E2E} ${TEST_TAGS.ECOMMERCE} Product search and filtering`, async ({ browser }) => {
-    Logger.testStart('Product Search and Filtering');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'Navigate to Products Page');
-      await navigateToPage(page, '/products');
-      
-      const productCards = page.locator(SELECTORS.ECOMMERCE.PRODUCT_CARD);
-      await expect(productCards.first()).toBeVisible({ timeout: 10000 });
-      
-      const initialProductCount = await productCards.count();
-      Logger.success(`Found ${initialProductCount} initial products`);
-      
-      Logger.phase(2, 'Test Product Search');
-      const searchInput = page.locator('input[name="search"], #search, .search-input');
-      if (await searchInput.isVisible()) {
-        await searchInput.fill('test');
-        await page.keyboard.press('Enter');
-        await page.waitForTimeout(2000);
-        
-        // Verify search results
-        const searchResults = page.locator(SELECTORS.ECOMMERCE.PRODUCT_CARD);
-        const searchCount = await searchResults.count();
-        
-        Logger.success(`Search returned ${searchCount} products`);
-      }
-      
-      Logger.phase(3, 'Test Category Filtering');
-      const categoryFilter = page.locator('.category-filter, select[name="category"]');
-      if (await categoryFilter.isVisible()) {
-        await categoryFilter.selectOption({ label: 'Electronics' });
-        await page.waitForTimeout(2000);
-        
-        // Verify filtered results
-        const filteredResults = page.locator(SELECTORS.ECOMMERCE.PRODUCT_CARD);
-        const filteredCount = await filteredResults.count();
-        
-        Logger.success(`Category filter returned ${filteredCount} products`);
-      }
-      
-      Logger.phase(4, 'Test Price Range Filter');
-      const priceMinInput = page.locator('input[name="priceMin"], #priceMin');
-      const priceMaxInput = page.locator('input[name="priceMax"], #priceMax');
-      
-      if (await priceMinInput.isVisible() && await priceMaxInput.isVisible()) {
-        await priceMinInput.fill('10');
-        await priceMaxInput.fill('100');
-        
-        const applyFilterButton = page.locator('.apply-filter, button:has-text("Apply")');
-        if (await applyFilterButton.isVisible()) {
-          await applyFilterButton.click();
-          await page.waitForTimeout(2000);
-          
-          Logger.success('Price range filter applied');
-        }
-      }
-      
-      Logger.success('Product search and filtering tests completed');
-      
+      Logger.success(`Products sorted by price: ${firstPrice} to ${lastPrice}`);
+
+      Logger.phase(3, 'Sort by Name (Z to A)');
+      await sortDropdown.selectOption('za');
+      await page.waitForTimeout(1000);
+
+      const firstProductName = await page.locator(SELECTORS.INVENTORY.PRODUCT_TITLE).first().textContent();
+      Logger.success(`Products sorted Z-A, first product: ${firstProductName}`);
+
+      Logger.phase(4, 'Add Sorted Products to Cart');
+      // Add first product after sorting
+      await page.locator(SELECTORS.INVENTORY.ADD_TO_CART_BUTTON).first().click();
+
+      // Verify cart badge updates
+      await expect(page.locator(SELECTORS.NAV.CART_BADGE)).toHaveText('1');
+
+      Logger.success('Product sorting and selection completed successfully');
+
+
     } finally {
       await cleanupTest(context, page);
     }

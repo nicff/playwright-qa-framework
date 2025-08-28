@@ -82,10 +82,10 @@ env:
   PLAYWRIGHT_VERSION: '^1.54.2'
   
   # Default demo URLs - override via secrets in real scenarios
-  STAGING_BASE_URL: 'https://staging.demo-app.example.com'
-  STAGING_API_URL: 'https://api-staging.demo-app.example.com/v1'
-  PROD_BASE_URL: 'https://demo-app.example.com'
-  PROD_API_URL: 'https://api.demo-app.example.com/v1'
+  STAGING_BASE_URL: 'https://staging.saucedemo.com'
+  STAGING_API_URL: 'https://staging.saucedemo.com/api'
+  PROD_BASE_URL: 'https://saucedemo.com'
+  PROD_API_URL: 'https://saucedemo.com/api'
   
   # CI/CD specific settings
   CI: true

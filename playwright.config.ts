@@ -39,12 +39,12 @@ export default defineConfig({
   
   // Global test configuration
   use: {
-    // Multi-environment base URL configuration
-    baseURL: process.env.BASE_URL || 'https://demo-app.example.com',
-    
-    // Browser options
-    headless: process.env.CI ? true : false,
-    
+    // SauceDemo base URL configuration
+    baseURL: process.env.BASE_URL || 'https://www.saucedemo.com',
+
+    // Browser options - headless by default
+    headless: true,
+
     // Screenshots and videos
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -75,39 +75,44 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
     
-    // Chrome Desktop
+    // Chrome Desktop (default for daily development)
     {
       name: 'chrome',
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'] },
     },
     
-    // Firefox Desktop  
+    // Extended browser testing (run with specific commands)
     {
       name: 'firefox',
       dependencies: ['setup'],
       use: { ...devices['Desktop Firefox'] },
     },
     
-    // Safari Desktop
     {
       name: 'safari',
       dependencies: ['setup'],
       use: { ...devices['Desktop Safari'] },
     },
     
-    // Mobile Chrome
+    // Mobile testing (run with specific commands)
     {
       name: 'mobile-chrome',
       dependencies: ['setup'],
       use: { ...devices['Pixel 5'] },
     },
     
-    // Mobile Safari
     {
       name: 'mobile-safari',
       dependencies: ['setup'],
       use: { ...devices['iPhone 12'] },
+    },
+
+    // Cross-browser testing project (all browsers)
+    {
+      name: 'cross-browser',
+      dependencies: ['setup'],
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 

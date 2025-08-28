@@ -28,55 +28,96 @@ export const TEST_TAGS = {
 
 // Selector patterns for common UI elements
 export const SELECTORS = {
-  // Authentication elements
+  // SauceDemo Authentication elements (real selectors)
   AUTH: {
-    EMAIL_INPUT: '[data-testid="email-input"], #email, input[type="email"]',
-    PASSWORD_INPUT: '[data-testid="password-input"], #password, input[type="password"]',
-    USERNAME_INPUT: '[data-testid="username-input"], #username',
-    LOGIN_BUTTON: '[data-testid="login-button"], button[type="submit"], .login-btn',
-    REGISTER_BUTTON: '[data-testid="register-button"], .register-btn',
-    LOGOUT_BUTTON: '[data-testid="logout-button"], .logout-btn',
-    FORGOT_PASSWORD_LINK: '[data-testid="forgot-password"], .forgot-password'
+    USERNAME_INPUT: 'input[data-test="username"]',
+    PASSWORD_INPUT: 'input[data-test="password"]',
+    LOGIN_BUTTON: 'input[data-test="login-button"]',
+    ERROR_MESSAGE: '[data-test="error"]',
+    ERROR_CONTAINER: '.error-message-container'
   },
   
-  // Navigation elements
+  // SauceDemo Navigation elements (real selectors)
   NAV: {
-    HOME_LINK: '[data-testid="home-link"], .nav-home',
-    PROFILE_LINK: '[data-testid="profile-link"], .nav-profile',
-    CART_LINK: '[data-testid="cart-link"], .nav-cart',
-    MENU_TOGGLE: '[data-testid="menu-toggle"], .menu-toggle'
+    MENU_BUTTON: '#react-burger-menu-btn',
+    CART_LINK: '.shopping_cart_link',
+    CART_BADGE: '.shopping_cart_badge',
+    LOGOUT_LINK: '#logout_sidebar_link',
+    ALL_ITEMS_LINK: '#inventory_sidebar_link',
+    ABOUT_LINK: '#about_sidebar_link',
+    RESET_APP_LINK: '#reset_sidebar_link'
+  },
+
+  // SauceDemo Inventory/Products elements (real selectors)
+  INVENTORY: {
+    PRODUCT_LIST: '.inventory_list',
+    PRODUCT_ITEM: '.inventory_item',
+    PRODUCT_TITLE: '.inventory_item_name',
+    PRODUCT_DESCRIPTION: '.inventory_item_desc',
+    PRODUCT_PRICE: '.inventory_item_price',
+    PRODUCT_IMAGE: '.inventory_item_img',
+    ADD_TO_CART_BUTTON: '[data-test*="add-to-cart"]',
+    REMOVE_BUTTON: '[data-test*="remove"]',
+    SORT_DROPDOWN: '.product_sort_container'
+  },
+
+  // SauceDemo Cart elements (real selectors)
+  CART: {
+    CART_LIST: '.cart_list',
+    CART_ITEM: '.cart_item',
+    CART_ITEM_NAME: '.inventory_item_name',
+    CART_ITEM_PRICE: '.inventory_item_price',
+    CART_QUANTITY: '.cart_quantity',
+    CHECKOUT_BUTTON: '[data-test="checkout"]',
+    CONTINUE_SHOPPING_BUTTON: '[data-test="continue-shopping"]',
+    REMOVE_BUTTON: '[data-test*="remove"]'
   },
   
-  // Ecommerce elements
-  ECOMMERCE: {
-    PRODUCT_CARD: '[data-testid="product-card"], .product-item',
-    ADD_TO_CART_BUTTON: '[data-testid="add-to-cart"], .add-to-cart-btn',
-    CART_ITEM: '[data-testid="cart-item"], .cart-item',
-    CHECKOUT_BUTTON: '[data-testid="checkout-button"], .checkout-btn',
-    PRICE_ELEMENT: '[data-testid="price"], .price',
-    QUANTITY_INPUT: '[data-testid="quantity"], input[name="quantity"]'
-  },
-  
-  // Form elements
-  FORM: {
-    SUBMIT_BUTTON: 'button[type="submit"], .submit-btn',
-    CANCEL_BUTTON: '[data-testid="cancel"], .cancel-btn',
-    INPUT_ERROR: '.error-message, .field-error',
-    SUCCESS_MESSAGE: '.success-message, .alert-success',
-    LOADING_SPINNER: '.loading, .spinner, [data-testid="loading"]'
-  },
-  
-  // Modal and overlay elements
-  MODAL: {
-    CONTAINER: '.modal, [role="dialog"]',
-    CLOSE_BUTTON: '.modal-close, [data-testid="modal-close"]',
-    CONFIRM_BUTTON: '.modal-confirm, [data-testid="confirm"]',
-    OVERLAY: '.modal-overlay, .backdrop'
+  // SauceDemo Checkout elements (real selectors)
+  CHECKOUT: {
+    FIRST_NAME_INPUT: '[data-test="firstName"]',
+    LAST_NAME_INPUT: '[data-test="lastName"]',
+    POSTAL_CODE_INPUT: '[data-test="postalCode"]',
+    CONTINUE_BUTTON: '[data-test="continue"]',
+    FINISH_BUTTON: '[data-test="finish"]',
+    CANCEL_BUTTON: '[data-test="cancel"]',
+    ERROR_MESSAGE: '[data-test="error"]',
+    COMPLETE_HEADER: '.complete-header',
+    COMPLETE_TEXT: '.complete-text',
+    BACK_HOME_BUTTON: '[data-test="back-to-products"]'
   }
 } as const;
 
 // Test data patterns
 export const TEST_DATA = {
+  // SauceDemo valid users (real test users)
+  SAUCEDEMO_USERS: {
+    STANDARD_USER: {
+      username: 'standard_user',
+      password: 'secret_sauce'
+    },
+    LOCKED_OUT_USER: {
+      username: 'locked_out_user',
+      password: 'secret_sauce'
+    },
+    PROBLEM_USER: {
+      username: 'problem_user',
+      password: 'secret_sauce'
+    },
+    PERFORMANCE_GLITCH_USER: {
+      username: 'performance_glitch_user',
+      password: 'secret_sauce'
+    },
+    ERROR_USER: {
+      username: 'error_user',
+      password: 'secret_sauce'
+    },
+    VISUAL_USER: {
+      username: 'visual_user',
+      password: 'secret_sauce'
+    }
+  },
+
   // Valid email patterns for testing
   VALID_EMAILS: [
     'testuser@example.com',
@@ -112,6 +153,20 @@ export const TEST_DATA = {
     TEST_DESCRIPTION: 'This is a test description for automation testing purposes.',
     SAMPLE_ADDRESS: '123 Test Street, QA City, TC 12345',
     SAMPLE_PHONE: '+1-555-TEST-QA'
+  },
+
+  // SauceDemo checkout form data
+  CHECKOUT_INFO: {
+    VALID: {
+      firstName: 'John',
+      lastName: 'Doe',
+      postalCode: '12345'
+    },
+    INVALID: {
+      firstName: '',
+      lastName: '',
+      postalCode: ''
+    }
   }
 } as const;
 
@@ -194,8 +249,8 @@ export const DEVICES = {
 // Test environment URLs (all demo/mock)
 export const ENVIRONMENTS = {
   LOCAL: 'http://localhost:3000',
-  STAGING: 'https://staging.demo-app.example.com',
-  PRODUCTION: 'https://demo-app.example.com'
+  STAGING: 'https://staging.saucedemo.com',
+  PRODUCTION: 'https://saucedemo.com'
 } as const;
 
 // Test user roles and permissions

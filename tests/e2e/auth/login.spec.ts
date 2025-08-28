@@ -1,260 +1,148 @@
 import { test, expect } from '@playwright/test';
 import { 
-  createAndRegisterUser, 
-  loginUser, 
-  logoutUser, 
-  verifyUserLoggedIn, 
-  verifyValidationError,
-  TestDataGenerator,
+  loginSauceDemo,
+  logoutSauceDemo,
+  waitForPageLoad,
   Logger,
   cleanupTest
 } from '../helpers/test-helpers';
-import { Config } from '../../../utils/config';
-import { SELECTORS, TEST_TAGS } from '../../../utils/constants';
+import { SELECTORS, TEST_TAGS, TEST_DATA } from '../../../utils/constants';
 
-test.describe('user Authentication - Login Flow', () => {
-  
-  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Valid user login with email`, async ({ browser }) => {
-    Logger.testStart('Valid User Login with Email');
+test.describe('Authentication Tests', () => {
+
+  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Login with valid credentials`, async ({ browser }) => {
+    Logger.testStart('Login with valid credentials');
     
     const context = await browser.newContext();
     const page = await context.newPage();
     
     try {
-      Logger.phase(1, 'User Creation and Setup');
-      const testUser = await createAndRegisterUser(page);
-      await logoutUser(page);
+      await loginSauceDemo(page, 'STANDARD_USER');
       
-      Logger.phase(2, 'Login Process');
-      await loginUser(page, testUser.email, testUser.password);
+      // Verify successful login
+      await expect(page.locator(SELECTORS.INVENTORY.PRODUCT_LIST)).toBeVisible();
       
-      Logger.phase(3, 'Login Verification');
-      await verifyUserLoggedIn(page);
-      Logger.success('User successfully logged in with email');
-      
-      Logger.phase(4, 'Post-login Navigation Verification');
-      await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 10000 });
-      Logger.success('User redirected to correct dashboard after login');
-      
+      Logger.success('Login test completed successfully');
     } finally {
       await cleanupTest(context, page);
     }
   });
 
-  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Valid user login with username`, async ({ browser }) => {
-    Logger.testStart('Valid User Login with Username');
+  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Login with multiple valid users`, async ({ browser }) => {
+    Logger.testStart('Login with multiple valid users');
     
     const context = await browser.newContext();
     const page = await context.newPage();
     
     try {
-      Logger.phase(1, 'User Creation and Setup');
-      const testUser = await createAndRegisterUser(page);
-      await logoutUser(page);
+      const validUsers: Array<keyof typeof TEST_DATA.SAUCEDEMO_USERS> = [
+        'STANDARD_USER',
+        'PROBLEM_USER', 
+        'PERFORMANCE_GLITCH_USER',
+        'ERROR_USER',
+        'VISUAL_USER'
+      ];
       
-      Logger.phase(2, 'Login with Username');
-      await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      await page.fill(SELECTORS.AUTH.EMAIL_INPUT, testUser.username);
-      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, testUser.password);
-      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
-      
-      Logger.phase(3, 'Login Verification');
-      await verifyUserLoggedIn(page);
-      Logger.success('User successfully logged in with username');
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
-
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Invalid login attempts - wrong password`, async ({ browser }) => {
-    Logger.testStart('Invalid Login - Wrong Password');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'User Creation and Setup');
-      const testUser = await createAndRegisterUser(page);
-      await logoutUser(page);
-      
-      Logger.phase(2, 'Login with Wrong Password');
-      await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      await page.fill(SELECTORS.AUTH.EMAIL_INPUT, testUser.email);
-      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, 'WrongPassword123!');
-      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
-      
-      Logger.phase(3, 'Error Verification');
-      await verifyValidationError(page);
-      
-      // Verify user is NOT logged in
-      await expect(page.locator(SELECTORS.AUTH.LOGOUT_BUTTON)).not.toBeVisible({ timeout: 5000 });
-      Logger.success('Login correctly rejected with wrong password');
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
-
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Invalid login attempts - non-existent user`, async ({ browser }) => {
-    Logger.testStart('Invalid Login - Non-existent User');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'Login with Non-existent User');
-      await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      const fakeEmail = TestDataGenerator.randomEmail();
-      await page.fill(SELECTORS.AUTH.EMAIL_INPUT, fakeEmail);
-      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, 'SomePassword123!');
-      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
-      
-      Logger.phase(2, 'Error Verification');
-      await verifyValidationError(page);
-      Logger.success('Login correctly rejected for non-existent user');
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
-
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Login form validation - empty fields`, async ({ browser }) => {
-    Logger.testStart('Login Form Validation - Empty Fields');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'Navigate to Login Form');
-      await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      Logger.phase(2, 'Submit Empty Form');
-      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
-      
-      Logger.phase(3, 'Validation Error Verification');
-      await verifyValidationError(page);
-      
-      // Verify login button is disabled or form shows validation errors
-      const emailInput = page.locator(SELECTORS.AUTH.EMAIL_INPUT);
-      const passwordInput = page.locator(SELECTORS.AUTH.PASSWORD_INPUT);
-      
-      await expect(emailInput).toHaveAttribute('required');
-      await expect(passwordInput).toHaveAttribute('required');
-      
-      Logger.success('Form validation working correctly for empty fields');
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
-
-  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Remember me functionality`, async ({ browser }) => {
-    Logger.testStart('Remember Me Functionality');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'User Creation and Setup');
-      const testUser = await createAndRegisterUser(page);
-      await logoutUser(page);
-      
-      Logger.phase(2, 'Login with Remember Me');
-      await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      await page.fill(SELECTORS.AUTH.EMAIL_INPUT, testUser.email);
-      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, testUser.password);
-      
-      // Check remember me if available
-      const rememberMeCheckbox = page.locator('input[type="checkbox"][name*="remember"], #remember-me');
-      if (await rememberMeCheckbox.isVisible()) {
-        await rememberMeCheckbox.check();
-        Logger.info('Remember me checkbox checked');
-      }
-      
-      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
-      
-      Logger.phase(3, 'Login Verification');
-      await verifyUserLoggedIn(page);
-      Logger.success('Login with remember me functionality completed');
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
-
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Password visibility toggle`, async ({ browser }) => {
-    Logger.testStart('Password Visibility Toggle');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'Navigate to Login Form');
-      await page.goto(Config.getUrl('/login'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      Logger.phase(2, 'Test Password Visibility Toggle');
-      const passwordInput = page.locator(SELECTORS.AUTH.PASSWORD_INPUT);
-      const toggleButton = page.locator('[data-testid="password-toggle"], .password-toggle, button[aria-label*="password"]');
-      
-      // Enter password
-      await passwordInput.fill('TestPassword123!');
-      
-      // Verify password is hidden by default
-      await expect(passwordInput).toHaveAttribute('type', 'password');
-      
-      // Toggle visibility if button exists
-      if (await toggleButton.isVisible()) {
-        await toggleButton.click();
-        await expect(passwordInput).toHaveAttribute('type', 'text');
-        Logger.success('Password visibility toggle working correctly');
+      for (const userType of validUsers) {
+        Logger.phase(1, `Testing login for: ${TEST_DATA.SAUCEDEMO_USERS[userType].username}`);
         
-        // Toggle back to hidden
-        await toggleButton.click();
-        await expect(passwordInput).toHaveAttribute('type', 'password');
-        Logger.success('Password hidden again successfully');
-      } else {
-        Logger.info('Password visibility toggle not implemented');
+        await loginSauceDemo(page, userType);
+        await expect(page.locator(SELECTORS.INVENTORY.PRODUCT_LIST)).toBeVisible();
+        
+        await logoutSauceDemo(page);
+        await waitForPageLoad(page);
       }
       
+      Logger.success('Multiple user login test completed successfully');
     } finally {
       await cleanupTest(context, page);
     }
   });
 
-  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Logout functionality`, async ({ browser }) => {
-    Logger.testStart('User Logout Functionality');
+  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Login with invalid credentials shows error`, async ({ browser }) => {
+    Logger.testStart('Login with invalid credentials');
     
     const context = await browser.newContext();
     const page = await context.newPage();
     
     try {
-      Logger.phase(1, 'User Login Setup');
-      const _testUser = await createAndRegisterUser(page);
-      await verifyUserLoggedIn(page);
+      await page.goto('https://www.saucedemo.com');
       
-      Logger.phase(2, 'Logout Process');
-      await logoutUser(page);
+      // Try invalid credentials
+      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, 'invalid_user');
+      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, 'invalid_password');
+      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
       
-      Logger.phase(3, 'Logout Verification');
-      // Verify redirect to login page or home page
-      await expect(page).toHaveURL(/\/(login|home|$)/, { timeout: 10000 });
+      // Verify error message
+      await expect(page.locator(SELECTORS.AUTH.ERROR_MESSAGE)).toBeVisible();
       
-      // Verify user is no longer logged in
-      await expect(page.locator(SELECTORS.AUTH.LOGOUT_BUTTON)).not.toBeVisible({ timeout: 5000 });
+      Logger.success('Invalid credentials test completed successfully');
+    } finally {
+      await cleanupTest(context, page);
+    }
+  });
+
+  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Locked out user cannot login`, async ({ browser }) => {
+    Logger.testStart('Locked out user cannot login');
+    
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    
+    try {
+      await page.goto('https://www.saucedemo.com');
       
-      Logger.success('User successfully logged out');
+      const lockedUser = TEST_DATA.SAUCEDEMO_USERS.LOCKED_OUT_USER;
+      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, lockedUser.username);
+      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, lockedUser.password);
+      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
       
+      // Verify locked out error message
+      const errorMessage = page.locator(SELECTORS.AUTH.ERROR_MESSAGE);
+      await expect(errorMessage).toBeVisible();
+      const errorText = await errorMessage.textContent();
+      expect(errorText).toContain('locked out');
+      
+      Logger.success('Locked out user test completed successfully');
+    } finally {
+      await cleanupTest(context, page);
+    }
+  });
+
+  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Logout functionality works correctly`, async ({ browser }) => {
+    Logger.testStart('Logout functionality');
+    
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    
+    try {
+      await loginSauceDemo(page, 'STANDARD_USER');
+      await expect(page.locator(SELECTORS.INVENTORY.PRODUCT_LIST)).toBeVisible();
+      
+      await logoutSauceDemo(page);
+      await expect(page.locator(SELECTORS.AUTH.LOGIN_BUTTON)).toBeVisible();
+      
+      Logger.success('Logout test completed successfully');
+    } finally {
+      await cleanupTest(context, page);
+    }
+  });
+
+  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Empty credentials validation`, async ({ browser }) => {
+    Logger.testStart('Empty credentials validation');
+    
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    
+    try {
+      await page.goto('https://www.saucedemo.com');
+      
+      // Try to login with empty fields
+      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
+      
+      // Verify error message appears
+      await expect(page.locator(SELECTORS.AUTH.ERROR_MESSAGE)).toBeVisible();
+
+      Logger.success('Empty credentials validation completed successfully');
     } finally {
       await cleanupTest(context, page);
     }

@@ -4,34 +4,67 @@
   "description": "Professional SDET/QA automation framework with Playwright, TypeScript, and modern testing practices for web applications",
   "type": "module",
   "scripts": {
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
-    "test:ui": "playwright test --ui",
-    
+    "test": "playwright test --project=chrome",
+    "test:debug": "playwright test --project=chrome --debug",
+    "test:ui": "playwright test --project=chrome --ui",
+
+    "test:headed": "playwright test --project=chrome --headed",
+    "test:watch": "playwright test --project=chrome --headed --watch",
+    "test:slow": "playwright test --project=chrome --headed --timeout=300000",
+
     "test:chrome": "playwright test --project=chrome",
     "test:firefox": "playwright test --project=firefox", 
     "test:safari": "playwright test --project=safari",
     "test:mobile": "playwright test --project=mobile-chrome --project=mobile-safari",
     
-    "test:local": "cross-env BASE_URL=http://localhost:3000 playwright test",
-    "test:staging": "cross-env BASE_URL=https://staging.demo-app.example.com playwright test",
-    "test:prod": "cross-env BASE_URL=https://demo-app.example.com playwright test",
-    
-    "test:e2e": "playwright test tests/e2e/",
-    "test:e2e:auth": "playwright test tests/e2e/auth/",
-    "test:e2e:ecommerce": "playwright test tests/e2e/ecommerce/",
-    "test:api": "playwright test tests/api/",
-    
-    "test:smoke": "playwright test --grep=\"smoke\"",
-    "test:regression": "playwright test --grep=\"regression\"",
-    "test:critical": "playwright test --grep=\"critical\"",
-    "test:sanity": "playwright test --grep=\"sanity\"",
-    
-    "test:parallel": "playwright test --workers=50%",
-    "test:serial": "playwright test --workers=1",
-    "test:fast": "playwright test --reporter=dot",
-    
+    "test:chrome:headed": "playwright test --project=chrome --headed",
+    "test:firefox:headed": "playwright test --project=firefox --headed",
+    "test:safari:headed": "playwright test --project=safari --headed",
+    "test:mobile:headed": "playwright test --project=mobile-chrome --project=mobile-safari --headed",
+
+    "test:full": "playwright test --project=chrome --project=firefox --project=safari",
+    "test:cross-browser": "playwright test --project=chrome --project=firefox --project=safari --project=mobile-chrome --project=mobile-safari",
+    "test:all": "playwright test",
+
+    "test:full:headed": "playwright test --project=chrome --project=firefox --project=safari --headed",
+    "test:cross-browser:headed": "playwright test --project=chrome --project=firefox --project=safari --project=mobile-chrome --project=mobile-safari --headed",
+
+    "test:local": "cross-env BASE_URL=http://localhost:3000 playwright test --project=chrome",
+    "test:staging": "cross-env BASE_URL=https://staging.saucedemo.com playwright test --project=chrome",
+    "test:prod": "cross-env BASE_URL=https://www.saucedemo.com playwright test --project=chrome",
+
+    "test:local:headed": "cross-env BASE_URL=http://localhost:3000 playwright test --project=chrome --headed",
+    "test:staging:headed": "cross-env BASE_URL=https://staging.saucedemo.com playwright test --project=chrome --headed",
+    "test:prod:headed": "cross-env BASE_URL=https://www.saucedemo.com playwright test --project=chrome --headed",
+
+    "test:e2e": "playwright test tests/e2e/ --project=chrome",
+    "test:e2e:auth": "playwright test tests/e2e/auth/ --project=chrome",
+    "test:e2e:ecommerce": "playwright test tests/e2e/ecommerce/ --project=chrome",
+    "test:e2e:navigation": "playwright test tests/e2e/navigation/ --project=chrome",
+    "test:api": "playwright test tests/api/ --project=chrome",
+    "test:security": "playwright test tests/e2e/security/ --project=chrome",
+    "test:performance": "playwright test tests/e2e/performance/ --project=chrome",
+
+    "test:e2e:headed": "playwright test tests/e2e/ --project=chrome --headed",
+    "test:e2e:auth:headed": "playwright test tests/e2e/auth/ --project=chrome --headed",
+    "test:e2e:ecommerce:headed": "playwright test tests/e2e/ecommerce/ --project=chrome --headed",
+    "test:e2e:navigation:headed": "playwright test tests/e2e/navigation/ --project=chrome --headed",
+    "test:security:headed": "playwright test tests/e2e/security/ --project=chrome --headed",
+    "test:performance:headed": "playwright test tests/e2e/performance/ --project=chrome --headed",
+
+    "test:smoke": "playwright test --grep=\"smoke\" --project=chrome",
+    "test:regression": "playwright test --grep=\"regression\" --project=chrome",
+    "test:critical": "playwright test --grep=\"critical\" --project=chrome",
+    "test:sanity": "playwright test --grep=\"sanity\" --project=chrome",
+
+    "test:smoke:headed": "playwright test --grep=\"smoke\" --project=chrome --headed",
+    "test:regression:headed": "playwright test --grep=\"regression\" --project=chrome --headed",
+    "test:critical:headed": "playwright test --grep=\"critical\" --project=chrome --headed",
+    "test:sanity:headed": "playwright test --grep=\"sanity\" --project=chrome --headed",
+
+    "test:parallel": "playwright test --project=chrome --workers=50%",
+    "test:retry": "playwright test --project=chrome --retries=3",
+
     "report": "playwright show-report",
     "report:open": "playwright show-report --open",
     "report:json": "playwright test --reporter=json",

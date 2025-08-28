@@ -1,379 +1,115 @@
 import { test, expect } from '@playwright/test';
 import { 
-  TestDataGenerator,
-  verifyValidationError,
-  verifySuccessMessage,
-  verifyUserLoggedIn,
+  loginSauceDemo,
+  logoutSauceDemo,
   Logger,
   cleanupTest
-} from '../helpers/test-helpers';
-import { Config } from '../../../utils/config';
-import { SELECTORS, TEST_TAGS } from '../../../utils/constants';
+} from '@helpers/test-helpers';
+import { SELECTORS, TEST_TAGS, TEST_DATA } from '@utils/constants';
 
-test.describe('user Authentication - Registration Flow', () => {
+test.describe('test - user account security validation', () => {
 
-  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Valid user registration`, async ({ browser }) => {
-    Logger.testStart('Valid User Registration');
-    
+  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} All SauceDemo test users are accessible`, async ({ browser }) => {
+    Logger.testStart('SauceDemo test users accessibility verification');
+
     const context = await browser.newContext();
     const page = await context.newPage();
     
     try {
-      Logger.phase(1, 'Generate Test User Data');
-      const userData = {
-        username: TestDataGenerator.randomUsername(),
-        email: TestDataGenerator.randomEmail(),
-        password: TestDataGenerator.randomPassword()
-      };
-      Logger.info(`Test user: ${userData.email}`);
-      
-      Logger.phase(2, 'Navigate to Registration Form');
-      await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      Logger.phase(3, 'Fill Registration Form');
-      await page.fill(SELECTORS.AUTH.EMAIL_INPUT, userData.email);
-      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, userData.password);
-      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, userData.username);
-      
-      // Fill additional fields if they exist
-      const firstNameInput = page.locator('input[name="firstName"], input[name="first_name"], #firstName');
-      const lastNameInput = page.locator('input[name="lastName"], input[name="last_name"], #lastName');
-      
-      if (await firstNameInput.isVisible()) {
-        await firstNameInput.fill('Test');
+      const testUsers = [
+        'STANDARD_USER',
+        'PROBLEM_USER',
+        'PERFORMANCE_GLITCH_USER',
+        'ERROR_USER',
+        'VISUAL_USER'
+      ] as const;
+
+      for (const userType of testUsers) {
+        Logger.phase(1, `Testing access for: ${TEST_DATA.SAUCEDEMO_USERS[userType].username}`);
+
+        await loginSauceDemo(page, userType);
+        await expect(page.locator(SELECTORS.INVENTORY.PRODUCT_LIST)).toBeVisible();
+        await logoutSauceDemo(page);
       }
-      if (await lastNameInput.isVisible()) {
-        await lastNameInput.fill('User');
-      }
-      
-      Logger.phase(4, 'Submit Registration Form');
-      await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-      
-      Logger.phase(5, 'Verify Successful Registration');
-      // Wait for either redirect to dashboard or success message
-      await Promise.race([
-        await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
-        verifySuccessMessage(page),
-        verifyUserLoggedIn(page)
-      ]);
-      
-      Logger.success('User registration completed successfully');
-      
+
+      Logger.success('All test users are accessible');
     } finally {
       await cleanupTest(context, page);
     }
   });
 
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Registration validation - invalid email formats`, async ({ browser }) => {
-    Logger.testStart('Registration Validation - Invalid Email Formats');
-    
+  test(`${TEST_TAGS.CRITICAL} ${TEST_TAGS.AUTH} Locked out user remains blocked`, async ({ browser }) => {
+    Logger.testStart('Locked out user security verification');
+
     const context = await browser.newContext();
     const page = await context.newPage();
     
-    const invalidEmails = [
-      'invalid-email',
-      '@example.com',
-      'test@',
-      'test..test@example.com',
-      'test space@example.com'
-    ];
-    
     try {
-      Logger.phase(1, 'Navigate to Registration Form');
-      await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      for (let i = 0; i < invalidEmails.length; i++) {
-        const invalidEmail = invalidEmails[i];
-        Logger.phase(i + 2, `Testing Invalid Email: ${invalidEmail}`);
-        
-        // Clear and fill form
-        await page.fill(SELECTORS.AUTH.EMAIL_INPUT, '');
-        await page.fill(SELECTORS.AUTH.EMAIL_INPUT, invalidEmail);
-        await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, 'ValidPassword123!');
-        await page.fill(SELECTORS.AUTH.USERNAME_INPUT, TestDataGenerator.randomUsername());
-        
-        // Submit form
-        await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-        
-        // Verify validation error
-        await verifyValidationError(page);
-        Logger.success(`Validation error correctly shown for: ${invalidEmail}`);
-      }
-      
+      await page.goto('https://www.saucedemo.com');
+
+      const lockedUser = TEST_DATA.SAUCEDEMO_USERS.LOCKED_OUT_USER;
+      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, lockedUser.username);
+      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, lockedUser.password);
+      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
+
+      // Verify locked out error persists
+      const errorMessage = page.locator(SELECTORS.AUTH.ERROR_MESSAGE);
+      await expect(errorMessage).toBeVisible();
+      const errorText = await errorMessage.textContent();
+      expect(errorText).toContain('locked out');
+
+      // Verify cannot access inventory even with direct URL
+      await page.goto('https://www.saucedemo.com/inventory.html');
+      await expect(page).toHaveURL('https://www.saucedemo.com/');
+
+      Logger.success('Locked out user properly secured');
     } finally {
       await cleanupTest(context, page);
     }
   });
 
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Registration validation - weak passwords`, async ({ browser }) => {
-    Logger.testStart('Registration Validation - Weak Passwords');
-    
+  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Session isolation between users`, async ({ browser }) => {
+    Logger.testStart('Session isolation verification');
+
     const context = await browser.newContext();
     const page = await context.newPage();
     
-    const weakPasswords = [
-      { password: '123', description: 'Too short' },
-      { password: 'password', description: 'No numbers/symbols' },
-      { password: '12345678', description: 'No letters' },
-      { password: 'PASSWORD123', description: 'No lowercase' },
-      { password: 'password123', description: 'No uppercase' }
-    ];
-    
     try {
-      Logger.phase(1, 'Navigate to Registration Form');
-      await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      for (let i = 0; i < weakPasswords.length; i++) {
-        const { password, description } = weakPasswords[i];
-        Logger.phase(i + 2, `Testing Weak Password: ${description}`);
-        
-        // Fill form with weak password
-        await page.fill(SELECTORS.AUTH.EMAIL_INPUT, TestDataGenerator.randomEmail());
-        await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, password);
-        await page.fill(SELECTORS.AUTH.USERNAME_INPUT, TestDataGenerator.randomUsername());
-        
-        // Submit form
-        await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-        
-        // Verify validation error
-        await verifyValidationError(page);
-        Logger.success(`Validation error correctly shown for weak password: ${description}`);
-        
-        // Clear fields for next iteration
-        await page.fill(SELECTORS.AUTH.EMAIL_INPUT, '');
-        await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, '');
-        await page.fill(SELECTORS.AUTH.USERNAME_INPUT, '');
-      }
-      
+      // Login as standard user and add items to cart
+      await loginSauceDemo(page, 'STANDARD_USER');
+      await page.locator(SELECTORS.INVENTORY.ADD_TO_CART_BUTTON).first().click();
+      await expect(page.locator(SELECTORS.NAV.CART_BADGE)).toHaveText('1');
+
+      // Logout and login as different user
+      await logoutSauceDemo(page);
+      await loginSauceDemo(page, 'PROBLEM_USER');
+
+      // Verify cart is empty for new user (sessions are isolated)
+      await expect(page.locator(SELECTORS.NAV.CART_BADGE)).not.toBeVisible();
+
+      Logger.success('Session isolation working correctly');
     } finally {
       await cleanupTest(context, page);
     }
   });
 
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Registration validation - duplicate email`, async ({ browser }) => {
-    Logger.testStart('Registration Validation - Duplicate Email');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'Register First User');
-      const userData = {
-        username: TestDataGenerator.randomUsername(),
-        email: TestDataGenerator.randomEmail(),
-        password: TestDataGenerator.randomPassword()
-      };
-      
-      await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      await page.fill(SELECTORS.AUTH.EMAIL_INPUT, userData.email);
-      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, userData.password);
-      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, userData.username);
-      await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-      
-      // Wait for successful registration
-      await Promise.race([
-        await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
-        verifyUserLoggedIn(page)
-      ]);
-      
-      Logger.success('First user registered successfully');
-      
-      Logger.phase(2, 'Attempt to Register with Same Email');
-      await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      // Try to register with same email
-      await page.fill(SELECTORS.AUTH.EMAIL_INPUT, userData.email);
-      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, 'DifferentPassword123!');
-      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, TestDataGenerator.randomUsername());
-      await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-      
-      Logger.phase(3, 'Verify Duplicate Email Error');
-      await verifyValidationError(page);
-      Logger.success('Duplicate email correctly rejected');
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
+  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} User credentials are case sensitive`, async ({ browser }) => {
+    Logger.testStart('Case sensitivity verification');
 
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Registration validation - duplicate username`, async ({ browser }) => {
-    Logger.testStart('Registration Validation - Duplicate Username');
-    
     const context = await browser.newContext();
     const page = await context.newPage();
     
     try {
-      Logger.phase(1, 'Register First User');
-      const userData = {
-        username: TestDataGenerator.randomUsername(),
-        email: TestDataGenerator.randomEmail(),
-        password: TestDataGenerator.randomPassword()
-      };
-      
-      await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      await page.fill(SELECTORS.AUTH.EMAIL_INPUT, userData.email);
-      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, userData.password);
-      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, userData.username);
-      await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-      
-      // Wait for successful registration
-      await Promise.race([
-        await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
-        verifyUserLoggedIn(page)
-      ]);
-      
-      Logger.success('First user registered successfully');
-      
-      Logger.phase(2, 'Attempt to Register with Same Username');
-      await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      // Try to register with same username
-      await page.fill(SELECTORS.AUTH.EMAIL_INPUT, TestDataGenerator.randomEmail());
-      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, 'DifferentPassword123!');
-      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, userData.username);
-      await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-      
-      Logger.phase(3, 'Verify Duplicate Username Error');
-      await verifyValidationError(page);
-      Logger.success('Duplicate username correctly rejected');
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
+      await page.goto('https://www.saucedemo.com');
 
-  test(`${TEST_TAGS.REGRESSION} ${TEST_TAGS.AUTH} Registration form validation - required fields`, async ({ browser }) => {
-    Logger.testStart('Registration Form Validation - Required Fields');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'Navigate to Registration Form');
-      await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      Logger.phase(2, 'Submit Empty Form');
-      await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-      
-      Logger.phase(3, 'Verify Required Field Validation');
-      await verifyValidationError(page);
-      
-      // Verify required attributes on inputs
-      const emailInput = page.locator(SELECTORS.AUTH.EMAIL_INPUT);
-      const passwordInput = page.locator(SELECTORS.AUTH.PASSWORD_INPUT);
-      const usernameInput = page.locator(SELECTORS.AUTH.USERNAME_INPUT);
-      
-      await expect(emailInput).toHaveAttribute('required');
-      await expect(passwordInput).toHaveAttribute('required');
-      await expect(usernameInput).toHaveAttribute('required');
-      
-      Logger.success('Required field validation working correctly');
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
+      // Test with modified case
+      await page.fill(SELECTORS.AUTH.USERNAME_INPUT, 'Standard_User'); // Wrong case
+      await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, TEST_DATA.SAUCEDEMO_USERS.STANDARD_USER.password);
+      await page.click(SELECTORS.AUTH.LOGIN_BUTTON);
 
-  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Password confirmation matching`, async ({ browser }) => {
-    Logger.testStart('Password Confirmation Matching');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'Navigate to Registration Form');
-      await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      const passwordConfirmInput = page.locator('input[name="passwordConfirm"], input[name="confirmPassword"], #passwordConfirm');
-      
-      if (await passwordConfirmInput.isVisible()) {
-        Logger.phase(2, 'Test Non-matching Passwords');
-        await page.fill(SELECTORS.AUTH.EMAIL_INPUT, TestDataGenerator.randomEmail());
-        await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, 'Password123!');
-        await passwordConfirmInput.fill('DifferentPassword123!');
-        await page.fill(SELECTORS.AUTH.USERNAME_INPUT, TestDataGenerator.randomUsername());
-        
-        await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-        
-        Logger.phase(3, 'Verify Password Mismatch Error');
-        await verifyValidationError(page);
-        Logger.success('Password mismatch correctly detected');
-        
-        Logger.phase(4, 'Test Matching Passwords');
-        const password = 'MatchingPassword123!';
-        await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, password);
-        await passwordConfirmInput.fill(password);
-        
-        await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-        
-        // Should proceed without password mismatch error
-        await Promise.race([
-          await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
-          verifyUserLoggedIn(page)
-        ]);
-        
-        Logger.success('Matching passwords accepted successfully');
-      } else {
-        Logger.info('Password confirmation field not implemented');
-      }
-      
-    } finally {
-      await cleanupTest(context, page);
-    }
-  });
+      await expect(page.locator(SELECTORS.AUTH.ERROR_MESSAGE)).toBeVisible();
 
-  test(`${TEST_TAGS.SMOKE} ${TEST_TAGS.AUTH} Terms and conditions acceptance`, async ({ browser }) => {
-    Logger.testStart('Terms and Conditions Acceptance');
-    
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      Logger.phase(1, 'Navigate to Registration Form');
-      await page.goto(Config.getUrl('/register'));
-      await page.waitForLoadState('domcontentloaded');
-      
-      const termsCheckbox = page.locator('input[type="checkbox"][name*="terms"], input[type="checkbox"][name*="agree"], #terms');
-      
-      if (await termsCheckbox.isVisible()) {
-        Logger.phase(2, 'Attempt Registration Without Accepting Terms');
-        await page.fill(SELECTORS.AUTH.EMAIL_INPUT, TestDataGenerator.randomEmail());
-        await page.fill(SELECTORS.AUTH.PASSWORD_INPUT, TestDataGenerator.randomPassword());
-        await page.fill(SELECTORS.AUTH.USERNAME_INPUT, TestDataGenerator.randomUsername());
-        
-        // Ensure terms checkbox is unchecked
-        await termsCheckbox.uncheck();
-        await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-        
-        Logger.phase(3, 'Verify Terms Acceptance Required');
-        await verifyValidationError(page);
-        Logger.success('Terms acceptance requirement working correctly');
-        
-        Logger.phase(4, 'Accept Terms and Complete Registration');
-        await termsCheckbox.check();
-        await page.click(SELECTORS.AUTH.REGISTER_BUTTON);
-        
-        await Promise.race([
-          await expect(page).toHaveURL(/\/(dashboard|profile|home)/, { timeout: 15000 }),
-          verifyUserLoggedIn(page)
-        ]);
-        
-        Logger.success('Registration completed after accepting terms');
-      } else {
-        Logger.info('Terms and conditions checkbox not implemented');
-      }
-      
+      Logger.success('Credentials are properly case sensitive');
     } finally {
       await cleanupTest(context, page);
     }
