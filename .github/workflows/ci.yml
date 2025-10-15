@@ -35,10 +35,6 @@ on:
       - '*.md'
       - 'docs/**'
       - '.vscode/**'
-      
-  # Daily regression testing at 6 AM UTC
-  schedule:
-    - cron: '0 6 * * *'
     
   # Manual workflow dispatch with configurable options
   workflow_dispatch:
